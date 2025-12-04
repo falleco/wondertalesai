@@ -1,0 +1,61 @@
+{
+  "queues": [
+    {
+      "name": "example",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic"
+      }
+    }
+  ],
+
+  "exchanges": [
+    {
+      "name": "example",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+
+  "bindings": [
+    {
+      "source": "example",
+      "vhost": "/",
+      "destination": "example",
+      "destination_type": "queue",
+      "routing_key": "example",
+      "arguments": {}
+    }
+  ],
+
+  "users": [
+    {
+      "name": "guest",
+      "password_hash": "Kg4bPvW0k16eyJ4hkpa4vRkia9WPWG1Wno98WxfeUNgR9yyQ",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": "administrator"
+    }
+  ],
+
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+
+  "permissions": [
+    {
+      "user": "guest",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ]
+}

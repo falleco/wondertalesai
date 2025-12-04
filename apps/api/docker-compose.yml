@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123 # the 123 makes it extra secure
+      POSTGRES_DB: sophon
+    ports:
+      - '5432:5432'
+  redis:
+    image: redis:8
+    ports:
+      - '6379:6379'
+  rabbitmq:
+    image: rabbitmq:4-management
+    volumes:
+      - ./docker/files/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./docker/files/definitions.json:/etc/rabbitmq/definitions.json:ro
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+    ports:
+      - '5672:5672'
+      - "15672:15672"
