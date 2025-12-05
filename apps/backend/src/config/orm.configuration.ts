@@ -39,7 +39,7 @@ export class TypeOrmConfigFactory implements TypeOrmOptionsFactory {
       }),
       type: 'postgres',
       url: dbConfig?.url,
-      entities: [`${__dirname}/../**/*.entity{.ts,.js}`],
+      entities: [`${__dirname}/../**/*.entity{.ts,.js}`, `${__dirname}/../**/entities/*.{.ts,.js}`],
       migrations: [`${__dirname}/../migrations/**/*{.ts,.js}`],
       migrationsTableName: 'service_migrations',
       autoLoadEntities: true,

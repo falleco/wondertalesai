@@ -7,8 +7,8 @@ import { ExampleService } from './example.service';
 export class ExampleController {
   constructor(private readonly exampleService: ExampleService) {}
   @Get()
-  async list(): Promise<ExampleEntity[]> {
-    return this.exampleService.list();
+  async list(): Promise<string> {
+    return "PONG";
   }
 
   @Get(':address')

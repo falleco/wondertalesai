@@ -10,8 +10,7 @@ import { HealthModule } from './health/health.module';
 import { RabbitMQModuleExtension } from './rabbitmq/rabbitmq.module';
 import { RedisModule } from './redis/redis.module';
 import { TrpcModule } from './trpc/trpc.module';
-import { AuthModule } from '@thallesp/nestjs-better-auth';
-import { auth } from './auth';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -19,7 +18,7 @@ import { auth } from './auth';
       isGlobal: true,
       load: [GetAppConfiguration],
     }),
-    AuthModule.forRoot({ auth }),
+    AuthModule,
     CacheModule.registerAsync({
       isGlobal: true,
       useClass: CacheConfigFactory,
@@ -30,9 +29,9 @@ import { auth } from './auth';
     RedisModule,
     HealthModule,
     RabbitMQModuleExtension,
-
     ExampleModule,
     TrpcModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],

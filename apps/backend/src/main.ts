@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { version } from '../package.json';
 import { AppModule } from './app.module';
+import { TrpcRouter } from './trpc/trpc.router';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -50,6 +51,10 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup(prefix, app, document);
   }
+
+  // TRPC
+  const trpc = app.get(TrpcRouter);
+  trpc.applyMiddleware(app);
 
   const port = cfg.get('port');
   const bind = cfg.get('bind');

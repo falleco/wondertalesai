@@ -27,5 +27,8 @@
     "@swc/core",
     "@tailwindcss/oxide",
     "protobufjs"
-  ]
+  ],
+  "resolutions": {
+    "typeorm": "0.3.28"
+  }
 }

@@ -1,6 +1,6 @@
 import * as trpcNext from '@trpc/server/adapters/express';
 import * as Sentry from '@sentry/node';
-import { PrincipalService } from './principal.service';
+import { PrincipalService } from '../auth/principal.service';
 
 export const generateInjectedContext = (principalService: PrincipalService) => {
   const createContext = async ({
@@ -10,17 +10,22 @@ export const generateInjectedContext = (principalService: PrincipalService) => {
     // Will be available as `ctx` in all your resolvers
     // This is just an example of something you might want to do in your ctx fn
     async function getUserFromHeader() {
-      if (req.headers.authorization) {
-        const result = await principalService.getAccounts(req);
-        const user = result.accounts[0];
+      if (req.headers.cookie) {
+        const principal = await principalService.getPrincipal(req);
+        console.log('result', principal);
+
+        if (!principal) {
+          return null;
+        }
 
         return {
-          id: user.id,
-          providerId: user.providerId,
-          accountId: user.accountId,
-          userId: user.userId,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
+          id: principal.id,
+          email: principal.email,
+          emailVerified: principal.emailVerified,
+          name: principal.name,
+          image: principal.image,
+          createdAt: principal.createdAt,
+          updatedAt: principal.updatedAt,
         };
       }
       return null;
@@ -30,9 +35,9 @@ export const generateInjectedContext = (principalService: PrincipalService) => {
     // identify the user on sentry on each request
     Sentry.setUser({
       id: user?.id,
-      // email: user?.email,
-      // username: user?.email,
-      // displayName: user?.name,
+      email: user?.email,
+      name: user?.name,
+      image: user?.image,
     });
 
     return {
