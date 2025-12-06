@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { initTRPC } from '@trpc/server';
-import { Context } from './trpc.context';
 import * as Sentry from '@sentry/node';
+import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
+import { Context } from './trpc.context';
 
 @Injectable()
 export class TrpcService {

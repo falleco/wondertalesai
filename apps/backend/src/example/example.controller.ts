@@ -1,6 +1,5 @@
 import { Controller, Get, Param, Post } from '@nestjs/common';
 import { Address } from 'viem';
-import { ExampleEntity } from './example.entity';
 import { ExampleService } from './example.service';
 
 @Controller('example')
@@ -8,7 +7,7 @@ export class ExampleController {
   constructor(private readonly exampleService: ExampleService) {}
   @Get()
   async list(): Promise<string> {
-    return "PONG";
+    return 'PONG';
   }
 
   @Get(':address')

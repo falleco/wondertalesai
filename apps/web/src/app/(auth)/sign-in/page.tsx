@@ -7,6 +7,7 @@ export default function SandboxPage() {
     console.log("signing in");
     const data = await authClient.signIn.social({
       provider: "github",
+      callbackURL: "/redirect",
     });
     console.log(data);
   };
@@ -14,7 +15,11 @@ export default function SandboxPage() {
   return (
     <div>
       Login Page{" "}
-      <button onClick={signIn} type="button" className="bg-blue-500 text-white p-2 rounded-md">
+      <button
+        onClick={signIn}
+        type="button"
+        className="bg-blue-500 text-white p-2 rounded-md"
+      >
         Sign In
       </button>
     </div>

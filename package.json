@@ -7,8 +7,10 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "yarn run --filter @mailestro/* dev",
-    "build": "bun run --filter @mailestro/* build",
+    "dev": "yarn workspaces foreach -Apt run dev",
+    "------------------------- BUILDING -------------------------": "",
+    "build": "yarn run --filter @mailestro/* build",
+    "typecheck": "yarn workspaces foreach -Apt run typecheck",
     "------------------------- LINTING -------------------------": "",
     "check": "biome check .",
     "check:fix": "biome check --write ."

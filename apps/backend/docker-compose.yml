@@ -5,6 +5,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123 # the 123 makes it extra secure
       POSTGRES_DB: app
+      POSTGRES_EXTENSIONS: uuid-ossp
     ports:
       - '5432:5432'
   redis:

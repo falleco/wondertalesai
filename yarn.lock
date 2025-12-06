@@ -7790,6 +7790,8 @@ __metadata:
     "@types/react-dom": "npm:^19"
     better-auth: "npm:^1.4.5"
     client-only: "npm:^0.0.1"
+    eventemitter3: "npm:^5.0.1"
+    ioredis: "npm:^5.8.2"
     next: "npm:16.0.7"
     react: "npm:19.2.0"
     react-dom: "npm:19.2.0"

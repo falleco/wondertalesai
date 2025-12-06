@@ -1,17 +1,19 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { auth } from "@web/auth/server";
+import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 export async function proxy(request: NextRequest) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  console.log(session);
+  console.log("path", request.nextUrl.pathname);
   // THIS IS NOT SECURE!
   // This is the recommended approach to optimistically redirect users
   // We recommend handling auth checks in each page/route
   if (!session) {
     console.log("redirecting to sign-in");
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+    const redirectUrl = new URL("/sign-in", request.url);
+    redirectUrl.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
   console.log("redirecting to dashboard");

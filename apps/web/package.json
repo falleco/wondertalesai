@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
+    "typecheck": "tsc --noEmit",
     "format": "biome format --write"
   },
   "dependencies": {
@@ -16,6 +17,8 @@
     "@trpc/react-query": "^11.7.2",
     "better-auth": "^1.4.5",
     "client-only": "^0.0.1",
+    "eventemitter3": "^5.0.1",
+    "ioredis": "^5.8.2",
     "next": "16.0.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",

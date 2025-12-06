@@ -24,11 +24,13 @@ async function bootstrap() {
 
   // General CORS
   const corsUrl = cfg.get('cors');
-  app.enableCors({
-    origin: corsUrl,
-    methods: ['GET', 'POST', 'HEAD', 'OPTIONS'],
-    credentials: true,
-  });
+  if (corsUrl) {
+    app.enableCors({
+      origin: corsUrl.split(',').map((url: string) => url.trim()),
+      methods: ['GET', 'POST', 'HEAD', 'OPTIONS'],
+      credentials: true,
+    });
+  }
 
   // Swagger Configuration
   const swaggerEnabled = cfg.get<boolean>('swagger.enabled') ?? false;

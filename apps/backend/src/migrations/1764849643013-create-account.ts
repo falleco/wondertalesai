@@ -1,6 +1,6 @@
-import { type MigrationInterface, type QueryRunner, Table, TableIndex, TableColumn } from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
-export class CreateAccount1764849643013 implements MigrationInterface {
+export class CreateUser1700768906558 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
@@ -8,68 +8,71 @@ export class CreateAccount1764849643013 implements MigrationInterface {
         columns: [
           {
             name: 'id',
-            type: 'text',
+            type: 'varchar',
             isPrimary: true,
+            generationStrategy: 'uuid',
+            // isGenerated: true,
+            isNullable: false,
+            default: 'uuid_generate_v4()',
           },
           {
-            name: 'accountId',
+            name: 'name',
             type: 'text',
+            isNullable: false,
           },
           {
-            name: 'providerId',
+            name: 'email',
             type: 'text',
+            isNullable: false,
+            isUnique: true,
           },
           {
-            name: 'userId',
-            type: 'text',
-          },
-          {
-            name: 'accessToken',
-            type: 'text',
-            isNullable: true,
-          },
-          {
-            name: 'refreshToken',
+            name: 'image',
             type: 'text',
             isNullable: true,
           },
           {
-            name: 'idToken',
-            type: 'text',
-            isNullable: true,
+            name: 'is_active',
+            type: 'boolean',
+            isNullable: false,
+            default: true,
           },
           {
-            name: 'accessTokenExpiresAt',
+            name: 'created_at',
+            type: 'date',
+            default: 'now()',
+            isNullable: false,
+          },
+          {
+            name: 'updated_at',
             type: 'date',
             isNullable: true,
           },
           {
-            name: 'refreshTokenExpiresAt',
+            name: 'last_seen_at',
             type: 'date',
             isNullable: true,
           },
-          {
-            name: 'scope',
-            type: 'text',
-            isNullable: true,
-          },
-          {
-            name: 'password',
-            type: 'text',
-            isNullable: true,
-          },
-          {
-            name: 'createdAt',
-            type: 'date',
-          },
-          {
-            name: 'updatedAt',
-            type: 'date',
-          }
         ],
+      }),
+      true,
+    );
+
+    await queryRunner.createIndex(
+      'account',
+      new TableIndex({
+        name: 'IDX_IS_ACTIVE',
+        columnNames: ['is_active'],
       }),
     );
 
+    await queryRunner.createIndex(
+      'account',
+      new TableIndex({
+        name: 'IDX_ACCOUNT_EMAIL_ACTIVE',
+        columnNames: ['email', 'is_active'],
+      }),
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

@@ -1,5 +1,5 @@
-import * as trpcNext from '@trpc/server/adapters/express';
 import * as Sentry from '@sentry/node';
+import * as trpcNext from '@trpc/server/adapters/express';
 import { PrincipalService } from '../auth/principal.service';
 
 export const generateInjectedContext = (principalService: PrincipalService) => {

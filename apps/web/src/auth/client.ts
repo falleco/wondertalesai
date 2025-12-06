@@ -2,4 +2,5 @@ import { createAuthClient } from "better-auth/react"; // make sure to import fro
 
 export const authClient = createAuthClient({
   basePath: "/api/auth",
+  baseURL: "http://localhost:3000",
 });

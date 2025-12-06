@@ -1,13 +1,12 @@
-import { DataSource } from 'typeorm';
-import { betterAuth } from 'better-auth';
 import { typeormAdapter } from '@hedystia/better-auth-typeorm';
+import { betterAuth } from 'better-auth';
+import { DataSource } from 'typeorm';
 
 /**
  *  Add this to the ts config
  *     "module": "es2022",
  *     "moduleResolution": "node",
  */
-
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -24,7 +23,6 @@ export const auth = betterAuth({
   database: typeormAdapter(dataSource, {
     outputDir: `${__dirname}/src/auth`,
     migrationsDir: `${__dirname}/src/migrations`,
-
   }),
   plugins: [],
 });
