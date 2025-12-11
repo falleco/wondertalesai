@@ -38,13 +38,13 @@ export const BILLING_PLANS = [
       "For hobbyists exploring AI—get started with essential features and a small token allowance.",
     pricing: {
       monthly: {
-        amount: AMOUNTS["free"]["monthly"],
-        formattedPrice: "$" + AMOUNTS["free"]["monthly"],
+        amount: AMOUNTS.free.monthly,
+        formattedPrice: `$${AMOUNTS.free.monthly}`,
         stripeId: null,
       },
       yearly: {
-        amount: AMOUNTS["free"]["yearly"],
-        formattedPrice: "$" + AMOUNTS["free"]["yearly"],
+        amount: AMOUNTS.free.yearly,
+        formattedPrice: `$${AMOUNTS.free.yearly}`,
         stripeId: null,
       },
     },
@@ -64,14 +64,14 @@ export const BILLING_PLANS = [
       "For developers building real products—higher limits and more flexible usage.",
     pricing: {
       monthly: {
-        amount: AMOUNTS["plus"]["monthly"],
-        formattedPrice: "$" + AMOUNTS["plus"]["monthly"],
-        stripeId: process.env.NEXT_PUBLIC_PLUS_MONTHLY_PRICE_ID!,
+        amount: AMOUNTS.plus.monthly,
+        formattedPrice: `$${AMOUNTS.plus.monthly}`,
+        stripeId: process.env.NEXT_PUBLIC_PLUS_MONTHLY_PRICE_ID as string,
       },
       yearly: {
-        amount: AMOUNTS["plus"]["yearly"],
-        formattedPrice: "$" + AMOUNTS["plus"]["yearly"],
-        stripeId: process.env.NEXT_PUBLIC_PLUS_YEARLY_PRICE_ID!,
+        amount: AMOUNTS.plus.yearly,
+        formattedPrice: `$${AMOUNTS.plus.yearly}`,
+        stripeId: process.env.NEXT_PUBLIC_PLUS_YEARLY_PRICE_ID as string,
       },
     },
     features: [
@@ -91,14 +91,14 @@ export const BILLING_PLANS = [
       "For teams and power users who need generous token limits and advanced tooling.",
     pricing: {
       monthly: {
-        amount: AMOUNTS["pro"]["monthly"],
-        formattedPrice: "$" + AMOUNTS["pro"]["monthly"],
-        stripeId: process.env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID!,
+        amount: AMOUNTS.pro.monthly,
+        formattedPrice: `$${AMOUNTS.pro.monthly}`,
+        stripeId: process.env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID as string,
       },
       yearly: {
-        amount: AMOUNTS["pro"]["yearly"],
-        formattedPrice: "$" + AMOUNTS["pro"]["yearly"],
-        stripeId: process.env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID!,
+        amount: AMOUNTS.pro.yearly,
+        formattedPrice: `$${AMOUNTS.pro.yearly}`,
+        stripeId: process.env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID as string,
       },
     },
     features: [
@@ -118,12 +118,12 @@ export const BILLING_PLANS = [
       "Tailored for companies with high-volume needs and advanced security.",
     pricing: {
       monthly: {
-        amount: AMOUNTS["enterprise"]["monthly"],
+        amount: AMOUNTS.enterprise.monthly,
         formattedPrice: "Let's talk",
         stripeId: null,
       },
       yearly: {
-        amount: AMOUNTS["enterprise"]["yearly"],
+        amount: AMOUNTS.enterprise.yearly,
         formattedPrice: "Let's talk",
         stripeId: null,
       },
@@ -142,10 +142,10 @@ export const BILLING_PLANS = [
 
 export function getPlanFromPriceIdWithBillingPeriod(priceId: string) {
   const priceToPlan = {
-    [process.env.NEXT_PUBLIC_PLUS_MONTHLY_PRICE_ID!]: "plus - monthly",
-    [process.env.NEXT_PUBLIC_PLUS_YEARLY_PRICE_ID!]: "plus - yearly",
-    [process.env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID!]: "pro - monthly",
-    [process.env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID!]: "pro - yearly",
+    [process.env.NEXT_PUBLIC_PLUS_MONTHLY_PRICE_ID as string]: "plus - monthly",
+    [process.env.NEXT_PUBLIC_PLUS_YEARLY_PRICE_ID as string]: "plus - yearly",
+    [process.env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID as string]: "pro - monthly",
+    [process.env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID as string]: "pro - yearly",
   };
 
   return priceToPlan[priceId];

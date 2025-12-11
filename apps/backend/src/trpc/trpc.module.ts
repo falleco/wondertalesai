@@ -1,5 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
-import { AccountModule } from '@server/account/account.module';
+// import { AccountModule } from '@server/account/account.module';
 import { AuthModule } from '@server/auth/auth.module';
 import { TrpcRouter } from '@server/trpc/trpc.router';
 import { TrpcService } from '@server/trpc/trpc.service';
@@ -13,7 +13,7 @@ import { PrincipalService } from '../auth/principal.service';
 @Module({
   imports: [
     forwardRef(() => AuthModule),
-    forwardRef(() => AccountModule),
+    // forwardRef(() => AccountModule),
     // forwardRef(() => UserModule),
     // forwardRef(() => IntegrationsModule),
     // forwardRef(() => LLMModule),

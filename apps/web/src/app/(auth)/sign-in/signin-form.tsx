@@ -2,9 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EyeCloseIcon, EyeIcon } from "@web/components/icons";
-import { Input, InputGroup } from "@web/components/ui/inputs";
+import { Input, InputGroup, Label } from "@web/components/ui/inputs";
 import { Checkbox } from "@web/components/ui/inputs/checkbox";
-import { Label } from "@web/components/ui/label";
 import { authValidation } from "@web/lib/zod/auth.schema";
 import Link from "next/link";
 import { useState } from "react";

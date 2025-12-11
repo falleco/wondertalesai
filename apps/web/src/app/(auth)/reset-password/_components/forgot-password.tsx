@@ -25,7 +25,7 @@ export default function ForgotPasswordForm({ invalidToken }: PropsType) {
     },
   });
 
-  async function onSubmit(data: Inputs) {
+  async function onSubmit(_data: Inputs) {
     setIsLoading(true);
 
     try {

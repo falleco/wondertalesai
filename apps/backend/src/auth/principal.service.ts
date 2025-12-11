@@ -8,7 +8,6 @@ export class PrincipalService {
   constructor(private authService: BetterAuthService) {}
 
   async getPrincipal(req: Request) {
-    console.log('req.headers', req.headers.cookie);
     const session = await this.authService.api.getSession({
       headers: fromNodeHeaders(req.headers),
     });

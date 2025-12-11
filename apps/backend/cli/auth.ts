@@ -1,6 +1,12 @@
 import { typeormAdapter } from '@hedystia/better-auth-typeorm';
+import { createBetterAuthBaseServerConfig } from '@mailestro/auth/server';
 import { betterAuth } from 'better-auth';
+import Stripe from 'stripe';
 import { DataSource } from 'typeorm';
+
+const stripeClient = new Stripe('a', {
+  apiVersion: '2025-11-17.clover', // Latest API version as of Stripe SDK v20.0.0
+});
 
 /**
  *  Add this to the ts config
@@ -11,20 +17,26 @@ import { DataSource } from 'typeorm';
 const dataSource = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
-  entities: [`${__dirname}/a/**/*.entity{.ts,.js}`],
-  migrations: [`${__dirname}/a/migrations/**/*{.ts,.js}`],
-  migrationsTableName: 'service_migrations',
-  migrationsRun: true,
+  entities: [`${__dirname}/../**/entities/*.{.ts,.js}`],
+  migrations: [`${__dirname}/../migrations/**/*{.ts,.js}`],
+  migrationsTableName: 'nothing',
+  migrationsRun: false,
 });
 
-/*await dataSource.initialize();*/
+// await dataSource.initialize();
 
 export const auth = betterAuth({
+  ...createBetterAuthBaseServerConfig(stripeClient, 'b'),
   database: typeormAdapter(dataSource, {
-    outputDir: `${__dirname}/src/auth`,
-    migrationsDir: `${__dirname}/src/migrations`,
+    outputDir: `${__dirname}/../src/auth`,
+    migrationsDir: `${__dirname}/../src/migrations`,
   }),
-  plugins: [],
+
+  secondaryStorage: {
+    get: async (_key: string) => null,
+    set: async (_key: string, _value: string, _ttl: number) => {},
+    delete: async (_key: string) => {},
+  },
 });
 
 export default auth;

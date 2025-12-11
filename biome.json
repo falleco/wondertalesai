@@ -47,6 +47,9 @@
         "noInferrableTypes": "error",
         "noUselessElse": "error",
         "useImportType": "off"
+      },
+      "complexity": {
+        "noImportantStyles": "off"
       }
     }
   }

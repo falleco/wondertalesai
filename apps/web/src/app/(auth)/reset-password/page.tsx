@@ -29,7 +29,7 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
         <div className="relative max-w-[592px] mx-auto">
           <div className="contact-wrapper border p-14 relative z-30 bg-white dark:bg-dark-primary dark:border-dark-primary border-gray-100">
             {tokenVerified ? (
-              <ResetPasswordForm resetToken={token!} />
+              <ResetPasswordForm resetToken={token as string} />
             ) : (
               <ForgotPasswordForm
                 invalidToken={Boolean(token && !tokenVerified)}

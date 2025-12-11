@@ -12,11 +12,11 @@ import type { z } from "zod";
 
 type Inputs = z.infer<typeof authValidation.resetPassword>;
 
-type PropsType = {
-  resetToken: string;
-};
+// type PropsType = {
+//   resetToken: string;
+// };
 
-export default function ResetPasswordForm({ resetToken }: PropsType) {
+export default function ResetPasswordForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,7 +28,7 @@ export default function ResetPasswordForm({ resetToken }: PropsType) {
     },
   });
 
-  async function onSubmit(data: Inputs) {
+  async function onSubmit(_data: Inputs) {
     setIsLoading(true);
 
     try {

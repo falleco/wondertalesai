@@ -12,7 +12,6 @@ export const generateInjectedContext = (principalService: PrincipalService) => {
     async function getUserFromHeader() {
       if (req.headers.cookie) {
         const principal = await principalService.getPrincipal(req);
-        console.log('result', principal);
 
         if (!principal) {
           return null;

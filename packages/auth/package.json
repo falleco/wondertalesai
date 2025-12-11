@@ -1,0 +1,68 @@
+{
+  "name": "@mailestro/auth",
+  "version": "0.0.1",
+  "description": "Common auth config",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "require": "./dist/index.js"
+      }
+    },
+    "./server": {
+      "import": {
+        "types": "./dist/server.d.mts",
+        "import": "./dist/server.mjs"
+      },
+      "require": {
+        "types": "./dist/server.d.ts",
+        "require": "./dist/server.js"
+      }
+    },
+    "./client": {
+      "import": {
+        "types": "./dist/client.d.mts",
+        "import": "./dist/client.mjs"
+      },
+      "require": {
+        "types": "./dist/client.d.ts",
+        "require": "./dist/client.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "------------------------- TESTING -------------------------": "",
+    "test": "vitest --watch false --passWithNoTests",
+    "test:dev": "vitest --watch true --passWithNoTests",
+    "test:ci": "vitest --watch false --passWithNoTests --coverage"
+  },
+  "dependencies": {
+    "@better-auth/passkey": "^1.4.6",
+    "@better-auth/stripe": "^1.4.5",
+    "@stripe/stripe-js": "^8.5.3",
+    "better-auth": "^1.4.5",
+    "stripe": "^20.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "yarn@4.9.2",
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}

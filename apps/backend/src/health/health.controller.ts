@@ -7,6 +7,7 @@ import {
   MemoryHealthIndicator,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import Redis from 'ioredis';
 
 @ApiTags('Common')
@@ -21,6 +22,7 @@ export class HealthController {
     private readonly redis: Redis,
   ) {}
 
+  @AllowAnonymous()
   @ApiOperation({
     summary: 'Return the health of the application',
   })

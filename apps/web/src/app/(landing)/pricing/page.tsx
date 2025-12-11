@@ -13,12 +13,12 @@ export default async function PricingPage() {
   // const activeSubscription = await getActiveSubscriptionByUserEmail(
   //   userSession?.user?.email,
   // );
-  const activeSubscription: any = null;
+  // const activeSubscription: unknown = null;
 
   return (
     <>
       <PricingSection
-        activeSubscriptionId={activeSubscription?.subscriptions?.id}
+      // activeSubscriptionId={activeSubscription?.subscriptions?.id}
       />
       <FaqAccordion />
     </>

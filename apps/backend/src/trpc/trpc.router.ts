@@ -1,5 +1,5 @@
 import { INestApplication, Injectable } from '@nestjs/common';
-import { AccountRouterBuilder } from '@server/account/account.router';
+// import { AccountRouterBuilder } from '@server/account/account.router';
 import { AuthRouterBuilder } from '@server/auth/auth.router';
 import { TrpcService } from '@server/trpc/trpc.service';
 import * as trpcExpress from '@trpc/server/adapters/express';
@@ -17,7 +17,7 @@ export class TrpcRouter {
     private readonly trpc: TrpcService,
     private readonly principalService: PrincipalService,
     private readonly authRouter: AuthRouterBuilder,
-    private readonly accountRouter: AccountRouterBuilder,
+    // private readonly accountRouter: AccountRouterBuilder,
     // private readonly userRouter: UserRouterBuilder,
     // private readonly integrationsRouter: IntegrationsRouterBuilder,
     // private readonly llmRouter: LLMRouterBuilder,
@@ -26,7 +26,7 @@ export class TrpcRouter {
 
   appRouter = this.trpc.router({
     auth: this.authRouter.buildRouter(),
-    account: this.accountRouter.buildRouter(),
+    // account: this.accountRouter.buildRouter(),
     // user: this.userRouter.buildRouter(),
     // integrations: this.integrationsRouter.buildRouter(),
     // llm: this.llmRouter.buildRouter(),

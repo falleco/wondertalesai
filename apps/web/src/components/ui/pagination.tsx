@@ -41,7 +41,7 @@ export function Pagination({
 
               if (index + 1 === currentPage + 3) {
                 return (
-                  <li key={index}>
+                  <li key={`pagination-ellipsis-${currentPage}`}>
                     <PaginationEllipsis />
                   </li>
                 );
@@ -49,7 +49,7 @@ export function Pagination({
 
               if (index + 1 < currentPage + 3 || index + 1 > totalPages - 2) {
                 return (
-                  <li key={index}>
+                  <li key={`pagination-button-${currentPage}`}>
                     <PaginationButton
                       page={index + 1}
                       isActive={isActive}
@@ -62,7 +62,7 @@ export function Pagination({
 
             if (index === 3) {
               return (
-                <li key={index}>
+                <li key={`pagination-ellipsis-${currentPage}`}>
                   <PaginationEllipsis />
                 </li>
               );
@@ -78,7 +78,7 @@ export function Pagination({
           }
 
           return (
-            <li key={index}>
+            <li key={`pagination-button-${currentPage}`}>
               <PaginationButton
                 page={index + 1}
                 isActive={isActive}

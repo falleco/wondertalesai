@@ -13,7 +13,7 @@ export default async function Home() {
   //   const activeSubscription = await getActiveSubscriptionByUserEmail(
   //     userSession?.user?.email,
   //   );
-  const activeSubscription: any = null;
+  // const activeSubscription: any = null;
   return (
     <>
       <HeroSection />
@@ -22,7 +22,7 @@ export default async function Home() {
       <BenefitsGrid />
       <TestimonialsSection />
       <PricingSection
-        activeSubscriptionId={activeSubscription?.subscriptions?.id}
+      // activeSubscriptionId={activeSubscription?.subscriptions?.id}
       />
       <FaqAccordion />
     </>

@@ -67,7 +67,7 @@ export function AutoGrowingTextArea({
         ref={textareaRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className={"min-h-14 max-h-40 " + className}
+        className={`min-h-14 max-h-40 ${className}`}
         {...props}
       />
     );
