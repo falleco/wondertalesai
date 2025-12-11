@@ -7,12 +7,10 @@ export default async function SandboxLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.api.getSession({
+  const _session = await auth.api.getSession({
     headers: await headers(),
   });
-  console.log("session", session);
-  const ping = await trpc.ping.query();
-  console.log("backend ping", ping);
+  const _ping = await trpc.ping.query();
 
   return <div>{children}</div>;
 }

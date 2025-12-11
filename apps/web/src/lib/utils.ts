@@ -1,5 +1,7 @@
 import type { UIMessage } from "ai";
 import { type ClassValue, clsx } from "clsx";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -33,4 +35,17 @@ export function errorHandler(error: unknown) {
 
 export function getScrollBarWidth() {
   return window.innerWidth - document.documentElement.clientWidth;
+}
+
+export function formatPrice(price: { amount: number; currency: string }) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: price.currency,
+    minimumFractionDigits: 0,
+  }).format(price.amount);
+}
+
+export function getTimeAgo(dateTime: string) {
+  dayjs.extend(relativeTime);
+  return dayjs(dateTime).fromNow();
 }

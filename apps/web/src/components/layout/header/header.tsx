@@ -4,9 +4,10 @@ import type { User } from "better-auth";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DesktopNav from "./desktop-nav";
 import MainMobileNav from "./main-mobile-nav";
+import { NotificationMenu } from "./notification-menu";
 import ThemeToggle from "./theme-toggle";
 import { UserProfileDropdown } from "./user-dropdown";
 
@@ -18,6 +19,13 @@ export default function Header({ user }: { user?: User }) {
     console.log("path changed", pathname);
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  console.log("pathname", pathname);
+  const isVisible = useMemo(() => {
+    return !["/profile", "/billing", "/integrations"].includes(pathname);
+  }, [pathname]);
+
+  if (!isVisible) return null;
 
   return (
     <header className="bg-white dark:bg-dark-primary border-b dark:border-gray-800 border-gray-100 sticky top-0 z-50 py-2 lg:py-4">
@@ -51,6 +59,7 @@ export default function Header({ user }: { user?: User }) {
 
           <div className="flex items-center gap-4 justify-self-end">
             <ThemeToggle />
+            {!!user && <NotificationMenu />}
             {!!user && <UserProfileDropdown user={user} />}
 
             <button

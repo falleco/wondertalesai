@@ -39,7 +39,6 @@ export default async function RootLayout({
     headers: await headers(),
   });
 
-  console.log("session", session?.user);
   return (
     <html lang="en" suppressHydrationWarning>
       <body

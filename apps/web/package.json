@@ -24,6 +24,7 @@
     "better-auth": "^1.4.5",
     "client-only": "^0.0.1",
     "clsx": "^2.1.1",
+    "dayjs": "^1.11.19",
     "eventemitter3": "^5.0.1",
     "ioredis": "^5.8.2",
     "next": "16.0.7",

@@ -48,7 +48,7 @@ export function UserProfileDropdown({ user }: { user?: User }) {
         <div className="origin-top-right absolute right-0 mt-2 w-[260px] shadow-lg dark:bg-[#1A2231] dark:border-gray-800 py-4 px-3 bg-white border border-gray-200 rounded-2xl">
           <div className="mb-4 px-3 text-sm leading-5">
             <div className="text-[#344054] dark:text-[#98A2B3] font-medium">
-              {user?.name} {user?.id}
+              {user?.name}
             </div>
             <div className="text-[#667085] dark:text-[#98A2B3]">
               {user?.email}

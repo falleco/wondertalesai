@@ -8646,6 +8646,7 @@ __metadata:
     better-auth: "npm:^1.4.5"
     client-only: "npm:^0.0.1"
     clsx: "npm:^2.1.1"
+    dayjs: "npm:^1.11.19"
     eventemitter3: "npm:^5.0.1"
     ioredis: "npm:^5.8.2"
     next: "npm:16.0.7"

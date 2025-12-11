@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SignInWithGithub, SignInWithGoogle } from "../_components/social-auth";
 import SignInForm from "./signin-form";
 
-export default function SandboxPage() {
+export default function SigninPage() {
   return (
     <section className="py-28 relative overflow-hidden">
       <div className="wrapper">
