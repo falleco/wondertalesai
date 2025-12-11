@@ -62,6 +62,14 @@ export class CreateInvitation1765465284820 implements MigrationInterface {
       }),
     );
 
+    await queryRunner.createIndex(
+      'invitation',
+      new TableIndex({
+        name: 'IDX_invitation_email_organization_id',
+        columnNames: ['email', 'organization_id'],
+      }),
+    );
+
     await queryRunner.createForeignKey(
       'invitation',
       new TableForeignKey({

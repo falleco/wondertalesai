@@ -1,4 +1,9 @@
-import { type MigrationInterface, type QueryRunner, Table } from 'typeorm';
+import {
+  type MigrationInterface,
+  type QueryRunner,
+  Table,
+  TableIndex,
+} from 'typeorm';
 
 export class CreateVerification1765465284820 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -35,6 +40,14 @@ export class CreateVerification1765465284820 implements MigrationInterface {
             type: 'timestamptz',
           },
         ],
+      }),
+    );
+
+    await queryRunner.createIndex(
+      'verification',
+      new TableIndex({
+        name: 'IDX_verification_identifier',
+        columnNames: ['identifier'],
       }),
     );
   }

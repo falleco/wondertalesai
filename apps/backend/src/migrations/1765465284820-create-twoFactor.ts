@@ -3,6 +3,7 @@ import {
   type QueryRunner,
   Table,
   TableForeignKey,
+  TableIndex,
 } from 'typeorm';
 
 export class CreateTwoFactor1765465284820 implements MigrationInterface {
@@ -34,6 +35,15 @@ export class CreateTwoFactor1765465284820 implements MigrationInterface {
         ],
       }),
     );
+
+    await queryRunner.createIndex(
+      'twoFactor',
+      new TableIndex({
+        name: 'IDX_twoFactor_secret',
+        columnNames: ['secret'],
+      }),
+    );
+
     await queryRunner.createForeignKey(
       'twoFactor',
       new TableForeignKey({

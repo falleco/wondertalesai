@@ -3,6 +3,7 @@ import {
   type QueryRunner,
   Table,
   TableForeignKey,
+  TableIndex,
 } from 'typeorm';
 
 export class CreateMember1765465284820 implements MigrationInterface {
@@ -36,6 +37,14 @@ export class CreateMember1765465284820 implements MigrationInterface {
             type: 'timestamptz',
           },
         ],
+      }),
+    );
+
+    await queryRunner.createIndex(
+      'member',
+      new TableIndex({
+        name: 'IDX_member_user_id_organization_id',
+        columnNames: ['user_id', 'organization_id'],
       }),
     );
 
