@@ -3,6 +3,7 @@ import { stripeClient } from '@better-auth/stripe/client';
 import { type BetterAuthClientOptions } from 'better-auth';
 import {
   adminClient,
+  magicLinkClient,
   organizationClient,
   twoFactorClient,
 } from 'better-auth/client/plugins';
@@ -17,6 +18,7 @@ export const createBetterAuthBaseClientConfig = (): BetterAuthClientOptions => {
       adminClient(),
       passkeyClient(),
       twoFactorClient(),
+      magicLinkClient(),
     ],
   };
 };

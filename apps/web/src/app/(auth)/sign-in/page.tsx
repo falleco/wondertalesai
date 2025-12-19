@@ -34,18 +34,6 @@ export default function SigninPage() {
             </div>
 
             <SignInForm />
-
-            <div className="mt-5">
-              <p className="text-gray-700 dark:text-gray-400 text-sm">
-                Don’t have an account?{" "}
-                <Link
-                  href="/signup"
-                  className="text-sm font-semibold text-primary-500"
-                >
-                  Sign Up
-                </Link>
-              </p>
-            </div>
           </div>
         </div>
       </div>

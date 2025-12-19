@@ -1,10 +1,19 @@
 import { passkey } from '@better-auth/passkey';
 import { stripe } from '@better-auth/stripe';
+import type { AppRouter } from '@server/trpc/trpc.router';
+import { createTRPCClient } from '@trpc/client';
 import { type BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
-import { admin, jwt, organization, twoFactor } from 'better-auth/plugins';
+import {
+  admin,
+  jwt,
+  magicLink,
+  organization,
+  twoFactor,
+} from 'better-auth/plugins';
 import Stripe from 'stripe';
 
 export const createBetterAuthBaseServerConfig = (
+  trpc: ReturnType<typeof createTRPCClient<AppRouter>>,
   stripeClient: Stripe,
   stripeWebhookSecret: string,
   extraPlugins: BetterAuthPlugin[] = [],
@@ -17,6 +26,12 @@ export const createBetterAuthBaseServerConfig = (
     },
 
     plugins: [
+      magicLink({
+        sendMagicLink: async ({ email, token, url }, ctx) => {
+          // send email to user
+          console.log(email, token, url, ctx);
+        },
+      }),
       stripe({
         stripeClient,
         stripeWebhookSecret,

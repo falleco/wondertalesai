@@ -2630,6 +2630,7 @@ __metadata:
     "@better-auth/passkey": "npm:^1.4.6"
     "@better-auth/stripe": "npm:^1.4.5"
     "@stripe/stripe-js": "npm:^8.5.3"
+    "@trpc/client": "npm:^11.8.0"
     better-auth: "npm:^1.4.5"
     stripe: "npm:^20.0.0"
     tsup: "npm:^8.5.0"
@@ -2706,6 +2707,7 @@ __metadata:
     typeorm: "npm:^0.3.28"
     typescript: "npm:^5.9.3"
     viem: "npm:^2.41.2"
+    zod: "npm:^4.2.1"
   languageName: unknown
   linkType: soft
 
@@ -5339,6 +5341,16 @@ __metadata:
     "@trpc/server": 11.7.2
     typescript: ">=5.7.2"
   checksum: 10c0/d0ef2edf4e471bec9d0a45c58e23dd1d25a5b56b277f6022e7b138abae06d09e71ac7c4ff9307882fd05e60886a27d810c5cac4e39a0fa401d17bddc4fbb6aec
+  languageName: node
+  linkType: hard
+
+"@trpc/client@npm:^11.8.0":
+  version: 11.8.0
+  resolution: "@trpc/client@npm:11.8.0"
+  peerDependencies:
+    "@trpc/server": 11.8.0
+    typescript: ">=5.7.2"
+  checksum: 10c0/16aac15859058b25f266fbdc1754e83e409d3adbfb101d430c510f3776947d4dca1aeea11f784e4b9d1affac56fdec119c7c2d85f0d4a2f815f5ec3a2104cd04
   languageName: node
   linkType: hard
 
@@ -13942,5 +13954,12 @@ __metadata:
   version: 4.1.13
   resolution: "zod@npm:4.1.13"
   checksum: 10c0/d7e74e82dba81a91ffc3239cd85bc034abe193a28f7087a94ab258a3e48e9a7ca4141920cac979a0d781495b48fc547777394149f26be04c3dc642f58bbc3941
+  languageName: node
+  linkType: hard
+
+"zod@npm:^4.2.1":
+  version: 4.2.1
+  resolution: "zod@npm:4.2.1"
+  checksum: 10c0/ecb5219bddf76a42d092a843fb98ad4cb78f1e1077082772b03ef032ee5cbc80790a4051836b962d26fb4af854323bc784d628bd1b8d9898149eba7af21c5560
   languageName: node
   linkType: hard
