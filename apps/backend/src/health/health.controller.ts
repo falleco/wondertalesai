@@ -1,5 +1,5 @@
 import { RedisHealthIndicator } from '@liaoliaots/nestjs-redis-health';
-import { Controller, Get, Inject } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   HealthCheck,
@@ -7,8 +7,8 @@ import {
   MemoryHealthIndicator,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
+import { RedisService } from '@server/redis/redis.service';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
-import Redis from 'ioredis';
 
 @ApiTags('Common')
 @Controller('health')
@@ -18,8 +18,7 @@ export class HealthController {
     private db: TypeOrmHealthIndicator,
     private memory: MemoryHealthIndicator,
     private readonly redisIndicator: RedisHealthIndicator,
-    @Inject('REDIS_CLIENT')
-    private readonly redis: Redis,
+    private readonly redisService: RedisService,
   ) {}
 
   @AllowAnonymous()
@@ -39,7 +38,7 @@ export class HealthController {
       () =>
         this.redisIndicator.checkHealth('redis', {
           type: 'redis',
-          client: this.redis,
+          client: this.redisService.redis,
           timeout: 500,
         }),
     ]);

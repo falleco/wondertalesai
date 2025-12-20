@@ -2,6 +2,7 @@ import { INestApplication, Injectable } from '@nestjs/common';
 // import { AccountRouterBuilder } from '@server/account/account.router';
 import { AuthRouterBuilder } from '@server/auth/auth.router';
 import { TrpcService } from '@server/trpc/trpc.service';
+import { AnyRouter } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import { PrincipalService } from '../auth/principal.service';
 // import { AuthRouterBuilder } from '@server/auth/auth.router';
@@ -13,6 +14,8 @@ import { generateInjectedContext } from './trpc.context';
 
 @Injectable()
 export class TrpcRouter {
+  appRouter: AnyRouter;
+
   constructor(
     private readonly trpc: TrpcService,
     private readonly principalService: PrincipalService,
@@ -22,19 +25,19 @@ export class TrpcRouter {
     // private readonly integrationsRouter: IntegrationsRouterBuilder,
     // private readonly llmRouter: LLMRouterBuilder,
     // private readonly checkoutRouter: CheckoutRouterBuilder,
-  ) {}
-
-  appRouter = this.trpc.router({
-    auth: this.authRouter.buildRouter(),
-    // account: this.accountRouter.buildRouter(),
-    // user: this.userRouter.buildRouter(),
-    // integrations: this.integrationsRouter.buildRouter(),
-    // llm: this.llmRouter.buildRouter(),
-    // checkout: this.checkoutRouter.buildRouter(),
-    ping: this.trpc.procedure.query(() => {
-      return 'pong';
-    }),
-  });
+  ) {
+    this.appRouter = this.trpc.router({
+      auth: this.authRouter.buildRouter(),
+      // account: this.accountRouter.buildRouter(),
+      // user: this.userRouter.buildRouter(),
+      // integrations: this.integrationsRouter.buildRouter(),
+      // llm: this.llmRouter.buildRouter(),
+      // checkout: this.checkoutRouter.buildRouter(),
+      ping: this.trpc.procedure.query(() => {
+        return 'pong';
+      }),
+    });
+  }
 
   async applyMiddleware(app: INestApplication) {
     app.use(

@@ -20,6 +20,11 @@ export const auth = betterAuth({
     stripeClient,
     process.env.STRIPE_WEBHOOK_SECRET as string,
     [openAPI(), nextCookies()],
+    {
+      sendMagicLink: async (email: string, token: string, url: string) => {
+        console.log("sending magicLink to", email, token, url);
+      },
+    },
   ),
 
   basePath: "/api/auth",

@@ -7,13 +7,12 @@ import { CacheConfigFactory } from './config/cache.configuration';
 import { GetAppConfiguration } from './config/configuration';
 import { TypeOrmConfigFactory } from './config/orm.configuration';
 import { HealthModule } from './health/health.module';
-import { RabbitMQModuleExtension } from './rabbitmq/rabbitmq.module';
+import { JobsModule } from './jobs/jobs.module';
 import { RedisModule } from './redis/redis.module';
 import { TrpcModule } from './trpc/trpc.module';
 
 @Module({
   imports: [
-    RedisModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [GetAppConfiguration],
@@ -26,10 +25,11 @@ import { TrpcModule } from './trpc/trpc.module';
     TypeOrmModule.forRootAsync({
       useClass: TypeOrmConfigFactory,
     }),
+    RedisModule,
     HealthModule,
-    RabbitMQModuleExtension,
     TrpcModule,
     AuthModule,
+    JobsModule,
   ],
   controllers: [],
   providers: [],

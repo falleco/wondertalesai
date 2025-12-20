@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { SignInWithGithub, SignInWithGoogle } from "../_components/social-auth";
 import SignInForm from "./signin-form";
 

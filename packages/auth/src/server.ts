@@ -1,7 +1,5 @@
 import { passkey } from '@better-auth/passkey';
 import { stripe } from '@better-auth/stripe';
-import type { AppRouter } from '@server/trpc/trpc.router';
-import { createTRPCClient } from '@trpc/client';
 import { type BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
 import {
   admin,
@@ -12,11 +10,19 @@ import {
 } from 'better-auth/plugins';
 import Stripe from 'stripe';
 
+const defaultCallback = async () => {
+  throw new Error('Not implemented');
+};
+
 export const createBetterAuthBaseServerConfig = (
-  trpc: ReturnType<typeof createTRPCClient<AppRouter>>,
   stripeClient: Stripe,
   stripeWebhookSecret: string,
   extraPlugins: BetterAuthPlugin[] = [],
+  callbacks: {
+    sendMagicLink: (email: string, token: string, url: string) => Promise<void>;
+  } = {
+    sendMagicLink: defaultCallback,
+  },
 ): BetterAuthOptions => {
   return {
     advanced: {
@@ -27,9 +33,8 @@ export const createBetterAuthBaseServerConfig = (
 
     plugins: [
       magicLink({
-        sendMagicLink: async ({ email, token, url }, ctx) => {
-          // send email to user
-          console.log(email, token, url, ctx);
+        sendMagicLink: async ({ email, token, url }) => {
+          await callbacks.sendMagicLink(email, token, url);
         },
       }),
       stripe({

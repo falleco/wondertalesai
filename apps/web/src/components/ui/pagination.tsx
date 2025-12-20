@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@web/lib/utils";
 
 type PropsType = {
   currentPage: number;

@@ -1,8 +1,7 @@
 import { createBetterAuthBaseServerConfig } from '@mailestro/auth/server';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { RedisService } from '@server/redis/redis.service';
 import { betterAuth } from 'better-auth';
-import Redis from 'ioredis';
-
 import Stripe from 'stripe';
 
 const stripeClient = new Stripe('a', {
@@ -13,14 +12,14 @@ const stripeClient = new Stripe('a', {
 export class AuthService {
   private auth: ReturnType<typeof betterAuth>;
 
-  constructor(
-    @Inject('REDIS_CLIENT')
-    readonly redis: Redis,
-  ) {
+  constructor(private readonly redisService: RedisService) {
+    const redis = this.redisService.redis;
+
     this.auth = betterAuth({
       ...createBetterAuthBaseServerConfig(
         stripeClient,
         process.env.STRIPE_WEBHOOK_SECRET as string,
+        [],
       ),
       basePath: '/api/auth',
       trustedOrigins: ['http://localhost:3000', 'http://localhost:4001'],
