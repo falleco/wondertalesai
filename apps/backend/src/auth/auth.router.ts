@@ -10,21 +10,25 @@ const MagicLinkInput = z.object({
   url: z.string(),
 });
 
+export const createAuthRouter = (trpc: TrpcService) => {
+  return trpc.router({
+    magicLink: trpc.procedure.input(MagicLinkInput).mutation(({ input }) => {
+      console.log('sending magicLink to', input);
+    }),
+
+    me: trpc.procedure.use(authRequired).query(({ ctx }) => {
+      return ctx.user;
+    }),
+  });
+};
+
+export type AuthRouter = ReturnType<typeof createAuthRouter>;
+
 @Injectable()
-export class AuthRouterBuilder implements RouterBuilder {
+export class AuthRouterBuilder implements RouterBuilder<AuthRouter> {
   constructor(private readonly trpc: TrpcService) {}
 
-  public buildRouter() {
-    return this.trpc.router({
-      magicLink: this.trpc.procedure
-        .input(MagicLinkInput)
-        .mutation(({ input }) => {
-          console.log('sending magicLink to', input);
-        }),
-
-      me: this.trpc.procedure.use(authRequired).query(({ ctx }) => {
-        return ctx.user;
-      }),
-    });
+  public buildRouter(): AuthRouter {
+    return createAuthRouter(this.trpc);
   }
 }

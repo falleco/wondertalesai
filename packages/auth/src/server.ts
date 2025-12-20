@@ -14,17 +14,19 @@ const defaultCallback = async () => {
   throw new Error('Not implemented');
 };
 
-export const createBetterAuthBaseServerConfig = (
+export const createBetterAuthBaseServerConfig = <
+  TPlugins extends BetterAuthPlugin[] = [],
+>(
   stripeClient: Stripe,
   stripeWebhookSecret: string,
-  extraPlugins: BetterAuthPlugin[] = [],
+  extraPlugins: TPlugins = [] as unknown as TPlugins,
   callbacks: {
     sendMagicLink: (email: string, token: string, url: string) => Promise<void>;
   } = {
     sendMagicLink: defaultCallback,
   },
-): BetterAuthOptions => {
-  return {
+) =>
+  ({
     advanced: {
       database: {
         generateId: 'uuid',
@@ -172,5 +174,4 @@ export const createBetterAuthBaseServerConfig = (
         updatedAt: 'updated_at',
       },
     },
-  };
-};
+  }) satisfies BetterAuthOptions;

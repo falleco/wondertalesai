@@ -8,8 +8,8 @@ import {
   twoFactorClient,
 } from 'better-auth/client/plugins';
 
-export const createBetterAuthBaseClientConfig = (): BetterAuthClientOptions => {
-  return {
+export const createBetterAuthBaseClientConfig = () =>
+  ({
     plugins: [
       stripeClient({
         subscription: true, //if you want to enable subscription management
@@ -20,5 +20,4 @@ export const createBetterAuthBaseClientConfig = (): BetterAuthClientOptions => {
       twoFactorClient(),
       magicLinkClient(),
     ],
-  };
-};
+  }) satisfies BetterAuthClientOptions;

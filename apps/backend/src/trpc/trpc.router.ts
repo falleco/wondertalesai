@@ -2,7 +2,6 @@ import { INestApplication, Injectable } from '@nestjs/common';
 // import { AccountRouterBuilder } from '@server/account/account.router';
 import { AuthRouterBuilder } from '@server/auth/auth.router';
 import { TrpcService } from '@server/trpc/trpc.service';
-import { AnyRouter } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import { PrincipalService } from '../auth/principal.service';
 // import { AuthRouterBuilder } from '@server/auth/auth.router';
@@ -12,9 +11,28 @@ import { generateInjectedContext } from './trpc.context';
 // import { LLMRouterBuilder } from '@server/llm/llm.router';
 // import {CheckoutRouterBuilder} from "@server/checkout/checkout.router";
 
+export const createAppRouter = (
+  trpc: TrpcService,
+  authRouter: AuthRouterBuilder,
+) => {
+  return trpc.router({
+    auth: authRouter.buildRouter(),
+    // account: this.accountRouter.buildRouter(),
+    // user: this.userRouter.buildRouter(),
+    // integrations: this.integrationsRouter.buildRouter(),
+    // llm: this.llmRouter.buildRouter(),
+    // checkout: this.checkoutRouter.buildRouter(),
+    ping: trpc.procedure.query(() => {
+      return 'pong';
+    }),
+  });
+};
+
+export type AppRouter = ReturnType<typeof createAppRouter>;
+
 @Injectable()
 export class TrpcRouter {
-  appRouter: AnyRouter;
+  readonly appRouter: AppRouter;
 
   constructor(
     private readonly trpc: TrpcService,
@@ -26,17 +44,7 @@ export class TrpcRouter {
     // private readonly llmRouter: LLMRouterBuilder,
     // private readonly checkoutRouter: CheckoutRouterBuilder,
   ) {
-    this.appRouter = this.trpc.router({
-      auth: this.authRouter.buildRouter(),
-      // account: this.accountRouter.buildRouter(),
-      // user: this.userRouter.buildRouter(),
-      // integrations: this.integrationsRouter.buildRouter(),
-      // llm: this.llmRouter.buildRouter(),
-      // checkout: this.checkoutRouter.buildRouter(),
-      ping: this.trpc.procedure.query(() => {
-        return 'pong';
-      }),
-    });
+    this.appRouter = createAppRouter(this.trpc, this.authRouter);
   }
 
   async applyMiddleware(app: INestApplication) {
@@ -49,5 +57,3 @@ export class TrpcRouter {
     );
   }
 }
-
-export type AppRouter = TrpcRouter[`appRouter`];
