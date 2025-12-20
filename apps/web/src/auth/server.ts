@@ -1,4 +1,5 @@
 import { createBetterAuthBaseServerConfig } from "@mailestro/auth/server";
+import { env } from "@web/env";
 import { redis } from "@web/lib/redis";
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
@@ -7,18 +8,18 @@ import { Pool } from "pg";
 
 import Stripe from "stripe";
 
-const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+const stripeClient = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-11-17.clover", // Latest API version as of Stripe SDK v20.0.0
 });
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: env.DATABASE_URL,
 });
 
 export const auth = betterAuth({
   ...createBetterAuthBaseServerConfig(
     stripeClient,
-    process.env.STRIPE_WEBHOOK_SECRET as string,
+    env.STRIPE_WEBHOOK_SECRET,
     [openAPI(), nextCookies()],
     {
       sendMagicLink: async (email: string, token: string, url: string) => {
@@ -33,8 +34,8 @@ export const auth = betterAuth({
 
   socialProviders: {
     github: {
-      clientId: process.env.GITHUB_CLIENT_ID as string,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
     },
   },
 

@@ -5185,6 +5185,50 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@t3-oss/env-core@npm:0.13.10":
+  version: 0.13.10
+  resolution: "@t3-oss/env-core@npm:0.13.10"
+  peerDependencies:
+    arktype: ^2.1.0
+    typescript: ">=5.0.0"
+    valibot: ^1.0.0-beta.7 || ^1.0.0
+    zod: ^3.24.0 || ^4.0.0
+  peerDependenciesMeta:
+    arktype:
+      optional: true
+    typescript:
+      optional: true
+    valibot:
+      optional: true
+    zod:
+      optional: true
+  checksum: 10c0/b3bd6edf9306ca77078cc1c596f038a6589fec9d279febcad5e02007ec6afa2e7a7173e62d74920620222e91a9c0a4a51a995c231c0a16bbdd9ddd966d6cbd67
+  languageName: node
+  linkType: hard
+
+"@t3-oss/env-nextjs@npm:^0.13.10":
+  version: 0.13.10
+  resolution: "@t3-oss/env-nextjs@npm:0.13.10"
+  dependencies:
+    "@t3-oss/env-core": "npm:0.13.10"
+  peerDependencies:
+    arktype: ^2.1.0
+    typescript: ">=5.0.0"
+    valibot: ^1.0.0-beta.7 || ^1.0.0
+    zod: ^3.24.0 || ^4.0.0
+  peerDependenciesMeta:
+    arktype:
+      optional: true
+    typescript:
+      optional: true
+    valibot:
+      optional: true
+    zod:
+      optional: true
+  checksum: 10c0/dd3afd257a5a4ae3418114fc5ae95f87cdee39122c599273f446bcd125285817f8333251c49a5499cc8c04042c443886c1810479b83142a9b5e3d4126dd9128e
+  languageName: node
+  linkType: hard
+
 "@tailwindcss/node@npm:4.1.17":
   version: 4.1.17
   resolution: "@tailwindcss/node@npm:4.1.17"
@@ -8809,6 +8853,7 @@ __metadata:
     "@hookform/resolvers": "npm:^5.2.2"
     "@mailestro/auth": "workspace:*"
     "@stripe/stripe-js": "npm:^8.5.3"
+    "@t3-oss/env-nextjs": "npm:^0.13.10"
     "@tailwindcss/postcss": "npm:^4.1.17"
     "@tailwindcss/typography": "npm:^0.5.19"
     "@tanstack/react-query": "npm:^5.90.12"

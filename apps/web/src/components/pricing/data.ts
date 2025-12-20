@@ -1,3 +1,5 @@
+import { env } from "@web/env";
+
 export const BILLING_PERIODS = [
   {
     label: "Monthly",
@@ -66,12 +68,12 @@ export const BILLING_PLANS = [
       monthly: {
         amount: AMOUNTS.plus.monthly,
         formattedPrice: `$${AMOUNTS.plus.monthly}`,
-        stripeId: process.env.NEXT_PUBLIC_PLUS_MONTHLY_PRICE_ID as string,
+        stripeId: env.NEXT_PUBLIC_PLUS_MONTHLY_PRICE_ID,
       },
       yearly: {
         amount: AMOUNTS.plus.yearly,
         formattedPrice: `$${AMOUNTS.plus.yearly}`,
-        stripeId: process.env.NEXT_PUBLIC_PLUS_YEARLY_PRICE_ID as string,
+        stripeId: env.NEXT_PUBLIC_PLUS_YEARLY_PRICE_ID,
       },
     },
     features: [
@@ -93,12 +95,12 @@ export const BILLING_PLANS = [
       monthly: {
         amount: AMOUNTS.pro.monthly,
         formattedPrice: `$${AMOUNTS.pro.monthly}`,
-        stripeId: process.env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID as string,
+        stripeId: env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID,
       },
       yearly: {
         amount: AMOUNTS.pro.yearly,
         formattedPrice: `$${AMOUNTS.pro.yearly}`,
-        stripeId: process.env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID as string,
+        stripeId: env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID,
       },
     },
     features: [
@@ -142,10 +144,10 @@ export const BILLING_PLANS = [
 
 export function getPlanFromPriceIdWithBillingPeriod(priceId: string) {
   const priceToPlan = {
-    [process.env.NEXT_PUBLIC_PLUS_MONTHLY_PRICE_ID as string]: "plus - monthly",
-    [process.env.NEXT_PUBLIC_PLUS_YEARLY_PRICE_ID as string]: "plus - yearly",
-    [process.env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID as string]: "pro - monthly",
-    [process.env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID as string]: "pro - yearly",
+    [env.NEXT_PUBLIC_PLUS_MONTHLY_PRICE_ID]: "plus - monthly",
+    [env.NEXT_PUBLIC_PLUS_YEARLY_PRICE_ID]: "plus - yearly",
+    [env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID]: "pro - monthly",
+    [env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID]: "pro - yearly",
   };
 
   return priceToPlan[priceId];
