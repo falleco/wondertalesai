@@ -22,7 +22,9 @@ export default function Header({ user }: { user?: User }) {
 
   console.log("pathname", pathname);
   const isVisible = useMemo(() => {
-    return !["/profile", "/billing", "/integrations"].includes(pathname);
+    return !["/profile", "/billing", "/integrations", "/dashboard"].includes(
+      pathname,
+    );
   }, [pathname]);
 
   if (!isVisible) return null;

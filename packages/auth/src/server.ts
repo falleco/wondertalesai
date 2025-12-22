@@ -149,7 +149,7 @@ export const createBetterAuthBaseServerConfig = <
       },
     },
     account: {
-      storeAccountCookie: true,
+      // storeAccountCookie: true,
       fields: {
         accountId: 'account_id',
         providerId: 'provider_id',

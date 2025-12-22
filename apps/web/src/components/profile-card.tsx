@@ -1,12 +1,12 @@
 "use client";
 
+import { authClient } from "@web/auth/client";
 import { trpc } from "@web/trpc/react";
 import type { User } from "better-auth";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EditProfileModal } from "./edit-profile-modal";
-import { authClient } from "@web/auth/client";
 
 type PropsType = {
   user?: User | null;
@@ -14,7 +14,7 @@ type PropsType = {
 
 export default function ProfileCard({ user }: PropsType) {
   const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
-  const updateProfile = trpc.auth.updateProfile.useMutation();
+  const _updateProfile = trpc.auth.updateProfile.useMutation();
   const router = useRouter();
 
   const userProfile = {

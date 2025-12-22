@@ -7,6 +7,7 @@ import { CacheConfigFactory } from './config/cache.configuration';
 import { GetAppConfiguration } from './config/configuration';
 import { TypeOrmConfigFactory } from './config/orm.configuration';
 import { HealthModule } from './health/health.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 import { JobsModule } from './jobs/jobs.module';
 import { RedisModule } from './redis/redis.module';
 import { TrpcModule } from './trpc/trpc.module';
@@ -30,6 +31,7 @@ import { TrpcModule } from './trpc/trpc.module';
     TrpcModule,
     AuthModule,
     JobsModule,
+    IntegrationsModule,
   ],
   controllers: [],
   providers: [],

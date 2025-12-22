@@ -5,6 +5,11 @@ export const navItems = [
     label: "Home",
   },
   {
+    type: "link",
+    href: "/dashboard",
+    label: "Dashboard",
+  },
+  {
     type: "dropdown",
     label: "Products",
     items: [

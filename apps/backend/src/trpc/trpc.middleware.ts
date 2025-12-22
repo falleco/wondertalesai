@@ -5,8 +5,6 @@ export const t = initTRPC.context<Context>().create();
 export const authRequired = t.middleware((opts) => {
   const { ctx } = opts;
 
-  console.log('ctx', ctx);
-
   if (!ctx.user) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',

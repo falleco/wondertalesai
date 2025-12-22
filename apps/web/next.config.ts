@@ -6,6 +6,21 @@ const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
 const hasPosthog = Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY);
 
 const nextConfig: NextConfig = {
+  webpack(config) {
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ["@svgr/webpack"],
+    });
+    return config;
+  },
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
+      },
+    },
+  },
   images: {
     remotePatterns: [
       {
@@ -18,7 +33,20 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
-    const rewrites = [];
+    const rewrites = [
+      {
+        source: "/trpc/:path*",
+        destination: "http://localhost:4001/trpc/:path*", // Proxy to Backend
+      },
+      {
+        source: "/trpc",
+        destination: "http://localhost:4001/trpc", // Proxy to Backend
+      },
+      // {
+      //   source: "/api/:path*",
+      //   destination: "http://localhost:4001/api/:path*", // Proxy to Backend
+      // },
+    ];
     if (hasPosthog) {
       rewrites.push(
         {

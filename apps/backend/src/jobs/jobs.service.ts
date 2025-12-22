@@ -3,7 +3,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { type AppConfigurationType } from '@server/config/configuration';
 import { Queue } from 'bullmq';
-import { DummyPayload, Queues, SendEmailPayload } from './queues';
+import {
+  DummyPayload,
+  EmailSyncPayload,
+  Queues,
+  SendEmailPayload,
+} from './queues';
 
 @Injectable()
 export class JobsService {
@@ -12,6 +17,8 @@ export class JobsService {
   constructor(
     @InjectQueue(Queues.DUMMY) private dummyQueue: Queue<DummyPayload>,
     @InjectQueue(Queues.EMAIL) private emailQueue: Queue<SendEmailPayload>,
+    @InjectQueue(Queues.EMAIL_SYNC)
+    private emailSyncQueue: Queue<EmailSyncPayload>,
     private readonly configService: ConfigService<AppConfigurationType>,
   ) {}
 
@@ -29,5 +36,9 @@ export class JobsService {
       return;
     }
     await this.emailQueue.add('send-email', payload);
+  }
+
+  async enqueueEmailSync(payload: EmailSyncPayload) {
+    await this.emailSyncQueue.add('email-sync', payload);
   }
 }
