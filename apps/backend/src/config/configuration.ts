@@ -69,6 +69,14 @@ export const GetAppConfiguration = async () => {
       url: config.REDIS_URL,
       ttl: 60, // 1 minute cache
     },
+    email: {
+      apiKey: config.SENDGRID_API_KEY,
+      fromEmail: config.SENDGRID_FROM_EMAIL,
+      fromName: config.SENDGRID_FROM_NAME,
+      templates: {
+        magicLink: config.SENDGRID_MAGIC_LINK_TEMPLATE_ID,
+      },
+    },
   };
 };
 

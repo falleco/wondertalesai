@@ -1,9 +1,10 @@
 "use server";
 
 import type { AppRouter } from "@server/trpc/trpc.router";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { createTRPCClient, httpBatchLink, loggerLink } from "@trpc/client";
 import { createServerSideHelpers } from "@trpc/react-query/server";
-import { headers } from "next/headers";
+import { env } from "@web/env";
+import { cookies } from "next/headers";
 import { cache } from "react";
 import superjson from "superjson";
 import { makeQueryClient } from "./query-client";
@@ -14,12 +15,16 @@ export const getQueryClient = cache(makeQueryClient);
 
 export const trpc = createTRPCClient<AppRouter>({
   links: [
+    loggerLink({
+      enabled: (op) =>
+        false || (op.direction === "down" && op.result instanceof Error),
+    }),
     httpBatchLink({
-      url: "http://localhost:3000/trpc", // TODO: change this url
+      url: `${env.NEXT_PUBLIC_API_BASE_URL}/trpc`,
       async headers() {
-        const heads = new Map(await headers());
+        const heads = new Map();
+        heads.set("cookie", (await cookies()).toString());
         heads.set("x-trpc-source", "rsc");
-        // heads.set("cookie", (await cookies())?.getAll().map(cookie => `${cookie.name}=${cookie.value}`).join('; ') || '');
         return Object.fromEntries(heads);
       },
       transformer: superjson,
@@ -38,7 +43,3 @@ export const createSSRHelper = async () => {
     transformer: superjson,
   });
 };
-
-// export const helpers = createServerSideHelpers({
-//   client: trpc,
-// });

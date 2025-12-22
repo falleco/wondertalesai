@@ -5,6 +5,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { BullConfigFactory } from '@server/config/queue.configuration';
 import { DummConsumer } from './consumers/dummy.consumer';
+import { EmailConsumer } from './consumers/email.consumer';
 import { JobsController } from './jobs.controller';
 import { JobsService } from './jobs.service';
 import { Queues } from './queues';
@@ -18,8 +19,15 @@ import { Queues } from './queues';
     BullModule.registerQueue({
       name: Queues.DUMMY,
     }),
+    BullModule.registerQueue({
+      name: Queues.EMAIL,
+    }),
     BullBoardModule.forFeature({
       name: Queues.DUMMY,
+      adapter: BullMQAdapter,
+    }),
+    BullBoardModule.forFeature({
+      name: Queues.EMAIL,
       adapter: BullMQAdapter,
     }),
     // Admin
@@ -28,7 +36,8 @@ import { Queues } from './queues';
       adapter: ExpressAdapter, // Or FastifyAdapter from `@bull-board/fastify`
     }),
   ],
-  providers: [JobsService, DummConsumer],
+  providers: [JobsService, DummConsumer, EmailConsumer],
   controllers: [JobsController],
+  exports: [JobsService],
 })
 export class JobsModule {}

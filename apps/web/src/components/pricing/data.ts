@@ -144,10 +144,10 @@ export const BILLING_PLANS = [
 
 export function getPlanFromPriceIdWithBillingPeriod(priceId: string) {
   const priceToPlan = {
-    [env.NEXT_PUBLIC_PLUS_MONTHLY_PRICE_ID]: "plus - monthly",
-    [env.NEXT_PUBLIC_PLUS_YEARLY_PRICE_ID]: "plus - yearly",
-    [env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID]: "pro - monthly",
-    [env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID]: "pro - yearly",
+    [env.NEXT_PUBLIC_PLUS_MONTHLY_PRICE_ID as string]: "plus - monthly",
+    [env.NEXT_PUBLIC_PLUS_YEARLY_PRICE_ID as string]: "plus - yearly",
+    [env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID as string]: "pro - monthly",
+    [env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID as string]: "pro - yearly",
   };
 
   return priceToPlan[priceId];

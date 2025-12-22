@@ -1,6 +1,7 @@
 import { createBetterAuthBaseServerConfig } from "@mailestro/auth/server";
 import { env } from "@web/env";
 import { redis } from "@web/lib/redis";
+import { trpc } from "@web/trpc/server";
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { openAPI } from "better-auth/plugins";
@@ -23,7 +24,9 @@ export const auth = betterAuth({
     [openAPI(), nextCookies()],
     {
       sendMagicLink: async (email: string, token: string, url: string) => {
-        console.log("sending magicLink to", email, token, url);
+        console.log("1 sending magicLink to", email, token, url);
+        await trpc.auth.magicLink.mutate({ email, token, url });
+        console.log("2 done sending magicLink to", email, token, url);
       },
     },
   ),

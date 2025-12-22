@@ -26,6 +26,7 @@
     "------------------ MIGRATIONS ------------------": "",
     "migration:create": "typeorm migration:create ./src/migrations/${0}",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d ormconfig.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d ormconfig.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d ormconfig.ts"
   },
   "dependencies": {
@@ -51,6 +52,7 @@
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.9",
+    "@sendgrid/mail": "^8.1.6",
     "@sentry/node": "^10.28.0",
     "@thallesp/nestjs-better-auth": "^2.2.0",
     "@trpc/server": "^11.7.2",

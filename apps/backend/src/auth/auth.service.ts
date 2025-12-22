@@ -1,5 +1,8 @@
 import { createBetterAuthBaseServerConfig } from '@mailestro/auth/server';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { type AppConfigurationType } from '@server/config/configuration';
+import { JobsService } from '@server/jobs/jobs.service';
 import { RedisService } from '@server/redis/redis.service';
 import { betterAuth } from 'better-auth';
 import Stripe from 'stripe';
@@ -12,7 +15,11 @@ const stripeClient = new Stripe('a', {
 export class AuthService {
   private auth: ReturnType<typeof betterAuth>;
 
-  constructor(private readonly redisService: RedisService) {
+  constructor(
+    private readonly redisService: RedisService,
+    private readonly jobsService: JobsService,
+    private readonly configService: ConfigService<AppConfigurationType>,
+  ) {
     const redis = this.redisService.redis;
 
     this.auth = betterAuth({
@@ -20,6 +27,21 @@ export class AuthService {
         stripeClient,
         process.env.STRIPE_WEBHOOK_SECRET as string,
         [],
+        {
+          sendMagicLink: async (email: string, token: string, url: string) => {
+            const emailConfig =
+              this.configService.get<AppConfigurationType['email']>('email');
+            const templateId = emailConfig?.templates?.magicLink;
+            if (!templateId) {
+              throw new Error('Config key missing: email.templates.magicLink');
+            }
+            await this.jobsService.enqueueEmail({
+              templateId,
+              to: email,
+              payload: { email, token, url },
+            });
+          },
+        },
       ),
       basePath: '/api/auth',
       trustedOrigins: ['http://localhost:3000', 'http://localhost:4001'],

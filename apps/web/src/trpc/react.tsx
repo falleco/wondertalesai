@@ -2,8 +2,9 @@
 
 import type { AppRouter } from "@server/trpc/trpc.router";
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchStreamLink } from "@trpc/client";
+import { httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
+import { env } from "@web/env";
 import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { useState } from "react";
 import superjson from "superjson";
@@ -30,24 +31,25 @@ export function TRPCReactProvider(props: {
   headers: Headers;
   cookies: ReadonlyRequestCookies;
 }) {
-  // const [queryClient] = useState(() => new QueryClient());
   const queryClient = getQueryClient();
 
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
-        httpBatchStreamLink({
-          url: "http://localhost:3000/trpc",
+        httpBatchLink({
+          url: `${env.NEXT_PUBLIC_API_BASE_URL}/trpc`,
+
+          fetch(url, options) {
+            return fetch(url, {
+              ...options,
+              credentials: "include",
+            });
+          },
+
           async headers() {
+            console.log("headers", props.headers);
             const heads = new Map(props.headers);
-            // const { getFirebaseAuth } = useFirebaseAuth();
-            // const token = await getFirebaseAuth().currentUser?.getIdToken();
-            // if (token) {
-            //   heads.set('authorization', `Bearer ${token}`);
-            // }
-            // console.log('cookies', props.cookies.getAll().map(cookie => `${cookie.name}=${cookie.value}`).join('; '));
             heads.set("x-trpc-source", "react");
-            // heads.set('cookie', props.cookies?.getAll().map(cookie => `${cookie.name}=${cookie.value}`).join('; ') || '');
             return Object.fromEntries(heads);
           },
           transformer: superjson,
