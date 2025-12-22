@@ -40,7 +40,7 @@ export function UserProfileDropdown({ user }: { user?: User }) {
           height={100}
           className="size-11 object-cover border border-gray-200 dark:border-[#1D2939] rounded-full"
           alt="User avatar"
-          quality={90}
+          quality={70}
         />
       </button>
 

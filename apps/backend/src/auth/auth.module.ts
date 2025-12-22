@@ -20,6 +20,7 @@ import { TwoFactor } from './entities/TwoFactor';
 import { User } from './entities/User';
 import { Verification } from './entities/Verification';
 import { PrincipalService } from './principal.service';
+import { ProfileService } from './profile.service';
 
 @Module({
   imports: [
@@ -53,7 +54,7 @@ import { PrincipalService } from './principal.service';
       inject: [RedisService, JobsService, ConfigService],
     }),
   ],
-  providers: [AuthService, PrincipalService, AuthRouterBuilder],
+  providers: [AuthService, PrincipalService, AuthRouterBuilder, ProfileService],
   exports: [PrincipalService, AuthRouterBuilder],
   controllers: [AuthController],
 })

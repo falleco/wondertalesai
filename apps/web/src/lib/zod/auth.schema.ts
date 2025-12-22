@@ -2,14 +2,11 @@ import { z } from "zod";
 
 export const authSchema = z.object({
   email: z.email({ message: "Email is required" }).trim(),
-  firstName: z
-    .string({ message: "First name is required" })
-    .min(1, "First name is required")
+  fullName: z
+    .string({ message: "Full name is required" })
+    .min(1, "Full name is required")
     .trim(),
-  lastName: z
-    .string({ message: "Last name is required" })
-    .min(1, "Last name is required")
-    .trim(),
+  image: z.string().optional().nullable(),
 });
 
 export type authSchema = z.infer<typeof authSchema>;

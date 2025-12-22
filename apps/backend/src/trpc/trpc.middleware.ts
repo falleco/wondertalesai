@@ -4,14 +4,15 @@ export const t = initTRPC.context<Context>().create();
 
 export const authRequired = t.middleware((opts) => {
   const { ctx } = opts;
-  console.log('authRequired middleware called');
+
+  console.log('ctx', ctx);
 
   if (!ctx.user) {
-    console.log('user not found');
-    throw new TRPCError({ code: 'UNAUTHORIZED' });
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'This resources requires authentication.',
+    });
   }
-
-  console.log('user found');
 
   return opts.next({
     ctx: {

@@ -21,6 +21,11 @@ Human devs have IDEs that autoformat code on every file save. After you edit fil
 
 This command will also report linter errors that were not automatically fixable. Use your judgement as to which of the linter violations should be fixed.
 
+### Development Directives
+
+- Always run `yarn run typecheck` after code changes and resolve any errors.
+- Keep tRPC routers thin: delegate business logic to dedicated services instead of implementing logic in router handlers.
+
 ### Build/Test Commands
 
 - `yarn run typecheck` - Compiles all the files and quickly reports back syntax errors 
@@ -37,7 +42,7 @@ This command will also report linter errors that were not automatically fixable.
 - **Styling**: Tailwind CSS v4
 - **Authentication**: better-auth (handled on both frontend and backend)
 - **API**: tRPC v11 for mutations with full e2e type safety
-- **Message Queue**: RabbitMQ for async processing
+- **Message Queue**: BullMQ for async processing
 - **Cache**: Redis for session storage and caching
 - **Error Tracking**: Sentry integration
 
@@ -71,7 +76,7 @@ src/
     {feature}.service.ts     # Business logic
     {feature}.router.ts      # tRPC router builder (implements RouterBuilder)
     {feature}.controller.ts  # Optional: REST endpoints (if needed)
-    {feature}.consumer.ts    # Optional: RabbitMQ consumers
+    {feature}.consumer.ts    # Optional: BullMQ consumers
     {feature}.seed.ts        # Optional: Database seeding
 ```
 
@@ -245,25 +250,23 @@ export class CreateFeature1234567890 implements MigrationInterface {
 }
 ```
 
-### RabbitMQ Integration
+### BullMQ Integration
 
-RabbitMQ is used for async message processing:
+BullMQ is used for async job processing:
 
-1. **Send Messages**: Use `RabbitMQService.sendToQueue()` in services
-2. **Consume Messages**: Create a consumer class with `@RabbitSubscribe()` decorator
+1. **Enqueue Jobs**: Use `@InjectQueue(...)` and `queue.add(...)` in services
+2. **Consume Jobs**: Create a consumer class with `@Processor()` and `WorkerHost`
 3. **Example Consumer**:
 ```typescript
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
-import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import { Job } from 'bullmq';
 
+@Processor('feature')
 @Injectable()
-export class FeatureConsumer {
-  @RabbitSubscribe({
-    exchange: 'feature',
-    routingKey: 'feature',
-  })
-  async handleMessage(msg: any) {
-    // Process message
+export class FeatureConsumer extends WorkerHost {
+  async process(job: Job): Promise<void> {
+    // Process job
   }
 }
 ```
@@ -352,7 +355,7 @@ export default function MyComponent() {
          │
          ├──► PostgreSQL (TypeORM)
          ├──► Redis (Sessions/Cache)
-         └──► RabbitMQ (Async Jobs)
+         └──► BullMQ (Async Jobs)
 ```
 
 ### Request Flow
@@ -394,7 +397,7 @@ export default function MyComponent() {
 Backend requires:
 - `DATABASE_URL` - PostgreSQL connection string
 - `REDIS_URL` - Redis connection string
-- `RABBITMQ_URL` - RabbitMQ connection string
+- `REDIS_URL` - Redis connection string (used for BullMQ)
 - `BETTER_AUTH_SECRET` - Secret for better-auth
 - `CORS_URL` - Allowed CORS origins
 - `PORT` - Backend port (default: 4001)
@@ -418,7 +421,7 @@ Frontend requires:
 
 - **Database**: Run migrations before deployment
 - **Redis**: Required for session storage
-- **RabbitMQ**: Required for async job processing
+- **BullMQ**: Required for async job processing (Redis-backed)
 - **Environment**: Set all required environment variables
 - **CORS**: Configure `CORS_URL` for production domain
 - **Sentry**: Configure Sentry DSN for error tracking

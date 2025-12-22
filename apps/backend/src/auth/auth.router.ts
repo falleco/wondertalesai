@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ProfileService } from '@server/auth/profile.service';
 import { JobsService } from '@server/jobs/jobs.service';
 import { RouterBuilder } from '@server/trpc/trpc.interface';
 import { authRequired } from '@server/trpc/trpc.middleware';
@@ -11,9 +12,15 @@ const MagicLinkInput = z.object({
   url: z.string(),
 });
 
+const UpdateProfileInput = z.object({
+  fullName: z.string().trim().min(1),
+  image: z.string().nullable().optional(),
+});
+
 export const createAuthRouter = (
   trpc: TrpcService,
   jobsService: JobsService,
+  profileService: ProfileService,
 ) => {
   return trpc.router({
     magicLink: trpc.procedure
@@ -29,6 +36,16 @@ export const createAuthRouter = (
     me: trpc.procedure.use(authRequired).query(({ ctx }) => {
       return ctx.user;
     }),
+
+    updateProfile: trpc.procedure
+      .use(authRequired)
+      .input(UpdateProfileInput)
+      .mutation(async ({ ctx, input }) => {
+        return await profileService.updateProfile(ctx.user.id, {
+          fullName: input.fullName,
+          image: input.image ?? null,
+        });
+      }),
   });
 };
 
@@ -39,9 +56,10 @@ export class AuthRouterBuilder implements RouterBuilder<AuthRouter> {
   constructor(
     private readonly trpc: TrpcService,
     private readonly jobsService: JobsService,
+    private readonly profileService: ProfileService,
   ) {}
 
   public buildRouter(): AuthRouter {
-    return createAuthRouter(this.trpc, this.jobsService);
+    return createAuthRouter(this.trpc, this.jobsService, this.profileService);
   }
 }

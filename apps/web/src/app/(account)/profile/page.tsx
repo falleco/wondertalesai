@@ -14,6 +14,8 @@ export default async function Profile() {
     headers: await headers(),
   });
 
+  console.log('user', session?.user);
+
   return (
     <>
       <WelcomeBanner />

@@ -6,7 +6,8 @@ import { InputGroup } from "@web/components/ui/inputs";
 import { Modal } from "@web/components/ui/modal";
 import { authValidation } from "@web/lib/zod/auth.schema";
 // import { useSession } from 'next-auth/react';
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
@@ -17,6 +18,7 @@ interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: Inputs;
+  email: string;
   onSave: (data: Inputs) => Promise<void>;
 }
 
@@ -24,32 +26,30 @@ export function EditProfileModal({
   isOpen,
   onClose,
   data,
+  email,
   onSave,
 }: EditProfileModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
+    data.image ?? null,
+  );
   // const { data: session } = useSession();
 
-  const form = useForm({
+  const form = useForm<Inputs>({
     resolver: zodResolver(authValidation.update),
     defaultValues: data,
   });
 
+  useEffect(() => {
+    setAvatarPreview(data.image ?? null);
+  }, [data.image]);
+
   async function onSubmit(data: Inputs) {
     setIsLoading(true);
     try {
-      // const res = await updateUser(data);
-      const res = {
-        error: "Not implemented",
-        message: null,
-      };
-
-      if (res?.error) {
-        toast.error(res.error);
-      } else {
-        await onSave(data);
-        toast.success("Profile updated successfully");
-        onClose();
-      }
+      await onSave(data);
+      toast.success("Profile updated successfully");
+      onClose();
     } catch (error) {
       console.error(error);
       toast.error("Something went wrong");
@@ -64,6 +64,7 @@ export function EditProfileModal({
       onClose={() => {
         onClose();
         form.reset(data);
+        setAvatarPreview(data.image ?? null);
       }}
       title="Edit Account Info"
       description="You can edit your account information from here."
@@ -72,11 +73,11 @@ export function EditProfileModal({
         <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
           <Controller
             control={form.control}
-            name="firstName"
+            name="fullName"
             render={({ field, fieldState }) => (
               <InputGroup
-                label="First name"
-                placeholder="Your first name"
+                label="Full name"
+                placeholder="Your full name"
                 disabled={isLoading}
                 {...field}
                 error={fieldState.error?.message}
@@ -86,14 +87,33 @@ export function EditProfileModal({
 
           <Controller
             control={form.control}
-            name="lastName"
+            name="image"
             render={({ field, fieldState }) => (
               <InputGroup
-                label="Last name"
-                placeholder="Your last name"
+                type="file"
+                accept="image/*"
+                label="Avatar"
                 disabled={isLoading}
-                {...field}
                 error={fieldState.error?.message}
+                name={field.name}
+                ref={field.ref}
+                onBlur={field.onBlur}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                  const file = event.currentTarget.files?.[0];
+                  if (!file) {
+                    field.onChange(data.image ?? null);
+                    setAvatarPreview(data.image ?? null);
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const result =
+                      typeof reader.result === "string" ? reader.result : null;
+                    field.onChange(result);
+                    setAvatarPreview(result);
+                  };
+                  reader.readAsDataURL(file);
+                }}
               />
             )}
           />
@@ -101,12 +121,28 @@ export function EditProfileModal({
           <InputGroup
             type="email"
             label="Email address"
-            defaultValue={/*session?.user?.email || */ "examplemail@gmail.com"}
+            defaultValue={email}
             className="disabled:cursor-not-allowed"
             placeholder="Your email address"
             groupClassName="col-span-full"
             disabled
           />
+
+          {avatarPreview ? (
+            <div className="flex items-center gap-3">
+              <Image
+                src={avatarPreview}
+                alt="Avatar preview"
+                width={48}
+                height={48}
+                unoptimized
+                className="h-12 w-12 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+              />
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Preview
+              </span>
+            </div>
+          ) : null}
 
           <div className="space-x-3 mt-6">
             <button

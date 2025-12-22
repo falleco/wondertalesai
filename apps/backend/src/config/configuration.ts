@@ -77,6 +77,14 @@ export const GetAppConfiguration = async () => {
         magicLink: config.SENDGRID_MAGIC_LINK_TEMPLATE_ID,
       },
     },
+    integrations: {
+      gmail: {
+        clientId: config.GMAIL_CLIENT_ID,
+        clientSecret: config.GMAIL_CLIENT_SECRET,
+        redirectUri: config.GMAIL_REDIRECT_URI,
+        pubsubTopic: config.GMAIL_PUBSUB_TOPIC,
+      },
+    },
   };
 };
 

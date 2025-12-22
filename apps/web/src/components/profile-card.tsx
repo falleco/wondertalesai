@@ -1,11 +1,12 @@
 "use client";
 
+import { trpc } from "@web/trpc/react";
 import type { User } from "better-auth";
-// import { updateUserSession } from '@/actions/user';
-// import type { Session } from 'next-auth';
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EditProfileModal } from "./edit-profile-modal";
+import { authClient } from "@web/auth/client";
 
 type PropsType = {
   user?: User | null;
@@ -13,13 +14,25 @@ type PropsType = {
 
 export default function ProfileCard({ user }: PropsType) {
   const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
+  const updateProfile = trpc.auth.updateProfile.useMutation();
   const router = useRouter();
 
-  const userData = {
-    firstName: user?.name?.split(" ")[0] || "Andrio",
-    lastName: user?.name?.split(" ").slice(1).join(" ") || "Metheio",
-    email: user?.email || "examplemail@gmail.com",
+  const userProfile = {
+    fullName: user?.name || "User",
+    email: user?.email || "",
+    image: user?.image || null,
   };
+  const profileFormData = {
+    fullName: userProfile.fullName,
+    image: userProfile.image,
+  };
+  const initials = userProfile.fullName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 
   return (
     <>
@@ -58,33 +71,39 @@ export default function ProfileCard({ user }: PropsType) {
             </button>
           </div>
 
-          <dl className="grid grid-cols-2 gap-7 max-w-lg p-6 pt-0">
+          <div className="flex items-center gap-4 px-6 pb-6 pt-0">
+            {userProfile.image ? (
+              <Image
+                src={userProfile.image}
+                alt={userProfile.fullName}
+                width={56}
+                height={56}
+                unoptimized
+                className="h-14 w-14 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+              />
+            ) : (
+              <div className="h-14 w-14 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-sm font-semibold text-gray-600 dark:text-gray-300">
+                {initials || "U"}
+              </div>
+            )}
             <div>
-              <dt className="text-sm text-gray-500 dark:text-gray-400">
-                First Name
-              </dt>
-
-              <dd className="font-semibold mt-2 text-gray-800 dark:text-white/90">
-                {userData.firstName}
-              </dd>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Full name
+              </p>
+              <p className="font-semibold mt-1 text-gray-800 dark:text-white/90">
+                {userProfile.fullName}
+              </p>
             </div>
+          </div>
 
-            <div>
-              <dt className="text-sm text-gray-500 dark:text-gray-400">
-                Last Name
-              </dt>
-
-              <dd className="font-semibold mt-2 text-gray-800 dark:text-white/90">
-                {userData.lastName}
-              </dd>
-            </div>
+          <dl className="grid grid-cols-2 gap-7 max-w-lg p-6 pt-0 border-gray-200 dark:border-gray-800">
             <div>
               <dt className="text-sm text-gray-500 dark:text-gray-400">
                 Email address
               </dt>
 
               <dd className="font-semibold mt-2 text-gray-800 dark:text-white/90">
-                {userData.email}
+                {userProfile.email}
               </dd>
             </div>
           </dl>
@@ -92,14 +111,16 @@ export default function ProfileCard({ user }: PropsType) {
       </div>
 
       <EditProfileModal
-        key={userData.email}
+        key={userProfile.email}
         isOpen={editProfileModalOpen}
         onClose={() => setEditProfileModalOpen(false)}
-        data={userData}
+        data={profileFormData}
+        email={userProfile.email}
         onSave={async (_data) => {
-          // await updateUserSession({
-          //   name: `${data.firstName} ${data.lastName}`,
-          // });
+          await authClient.updateUser({
+            name: _data.fullName,
+            image: _data.image ?? null,
+          });
 
           router.refresh();
         }}
