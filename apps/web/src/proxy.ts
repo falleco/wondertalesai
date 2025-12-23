@@ -10,13 +10,11 @@ export async function proxy(request: NextRequest) {
   // This is the recommended approach to optimistically redirect users
   // We recommend handling auth checks in each page/route
   if (!session) {
-    console.log("redirecting to sign-in");
     const redirectUrl = new URL("/sign-in", request.url);
     redirectUrl.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  console.log("redirecting to dashboard");
   return NextResponse.next();
 }
 export const config = {

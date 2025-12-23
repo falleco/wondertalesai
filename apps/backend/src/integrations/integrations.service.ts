@@ -244,6 +244,8 @@ export class IntegrationsService {
     private readonly oauthStateRepository: Repository<IntegrationOauthState>,
     @InjectRepository(EmailMessage)
     private readonly messageRepository: Repository<EmailMessage>,
+    @InjectRepository(EmailParticipant)
+    private readonly participantRepository: Repository<EmailParticipant>,
     @InjectRepository(EmailLabel)
     private readonly labelRepository: Repository<EmailLabel>,
     @InjectRepository(EmailAttachment)
@@ -266,6 +268,104 @@ export class IntegrationsService {
       lastSyncedAt: connection.lastSyncedAt,
       createdAt: connection.createdAt,
     }));
+  }
+
+  async getEmailInbox(
+    userId: string,
+    input?: { page?: number; pageSize?: number },
+  ) {
+    const pageSize = Math.min(Math.max(input?.pageSize ?? 20, 1), 50);
+    const page = Math.max(input?.page ?? 1, 1);
+
+    const connections = await this.connectionRepository.find({
+      where: { userId },
+      select: {
+        id: true,
+      },
+    });
+
+    const connectionIds = connections.map((connection) => connection.id);
+    const totalConnections = connectionIds.length;
+
+    if (connectionIds.length === 0) {
+      return {
+        stats: {
+          totalConnections,
+          totalEmails: 0,
+        },
+        pagination: {
+          page,
+          pageSize,
+          total: 0,
+          totalPages: 0,
+        },
+        emails: [],
+      };
+    }
+
+    const totalEmails = await this.messageRepository.count({
+      where: { connectionId: In(connectionIds) },
+    });
+
+    const messages = await this.messageRepository.find({
+      where: { connectionId: In(connectionIds) },
+      order: { sentAt: 'DESC', createdAt: 'DESC' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        subject: true,
+        snippet: true,
+        sentAt: true,
+        isUnread: true,
+      },
+    });
+
+    const messageIds = messages.map((message) => message.id);
+    const fromParticipants = messageIds.length
+      ? await this.participantRepository.find({
+          where: {
+            messageId: In(messageIds),
+            role: 'from',
+          },
+        })
+      : [];
+
+    const fromByMessageId = new Map(
+      fromParticipants.map((participant) => [
+        participant.messageId,
+        participant,
+      ]),
+    );
+
+    return {
+      stats: {
+        totalConnections,
+        totalEmails,
+      },
+      pagination: {
+        page,
+        pageSize,
+        total: totalEmails,
+        totalPages: Math.ceil(totalEmails / pageSize),
+      },
+      emails: messages.map((message) => {
+        const from = fromByMessageId.get(message.id);
+        return {
+          id: message.id,
+          subject: message.subject,
+          snippet: message.snippet,
+          sentAt: message.sentAt,
+          isUnread: message.isUnread,
+          from: from
+            ? {
+                name: from.name,
+                email: from.email,
+              }
+            : null,
+        };
+      }),
+    };
   }
 
   async removeConnection(userId: string, connectionId: string) {

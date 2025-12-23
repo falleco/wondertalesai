@@ -16,13 +16,11 @@ export default function Header({ user }: { user?: User }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    console.log("path changed", pathname);
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  console.log("pathname", pathname);
   const isVisible = useMemo(() => {
-    return !["/profile", "/billing", "/integrations", "/dashboard"].includes(
+    return !["/profile", "/billing", "/integrations", "/dashboard", "/emails"].includes(
       pathname,
     );
   }, [pathname]);

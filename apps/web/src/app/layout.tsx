@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "simplebar-react/dist/simplebar.min.css";
 import { auth } from "@web/auth/server";
 import WithNavLayout from "@web/components/layout/with-nav-layout";
 import {

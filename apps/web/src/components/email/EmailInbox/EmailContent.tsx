@@ -1,122 +1,51 @@
 "use client";
 import { Checkbox } from "@web/components/ui/checkbox";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SimpleBar from "simplebar-react";
 import EmailHeader from "./EmailHeader";
 import EmailPagination from "./EmailPagination";
 
-interface Mail {
+type Mail = {
   id: string;
-  subject: string;
-  content: string;
-  time: string;
-  badge?: "Important" | "Social" | "Promotional";
-}
+  subject: string | null;
+  snippet: string | null;
+  sentAt: Date | string | null;
+  isUnread: boolean;
+  from: { name: string | null; email: string } | null;
+};
 
-const mailData: Mail[] = [
-  {
-    id: "material-ui",
-    subject: "Material UI",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "12:16 pm",
-    badge: "Important",
-  },
-  {
-    id: "wise",
-    subject: "Wise",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "12:16 pm",
-  },
-  {
-    id: "search-console",
-    subject: "Search Console",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Apr, 24",
-    badge: "Social",
-  },
-  {
-    id: "paypal",
-    subject: "Paypal",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Apr, 30",
-  },
-  {
-    id: "google-meet",
-    subject: "Google Meet",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Apr, 16",
-  },
-  {
-    id: "loom",
-    subject: "Loom",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Apr, 24",
-  },
-  {
-    id: "airbnb",
-    subject: "Airbnb",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Mar, 05",
-  },
-  {
-    id: "facebook",
-    subject: "Facebook",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Feb, 25",
-  },
-  {
-    id: "instagram",
-    subject: "Instagram",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Feb, 20",
-    badge: "Promotional",
-  },
-  {
-    id: "google",
-    subject: "Google",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Feb, 25",
-  },
-  {
-    id: "formbold",
-    subject: "FormBold",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Jan, 22",
-  },
-  {
-    id: "graygrids",
-    subject: "GrayGrids",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Feb, 25",
-  },
-  {
-    id: "uideck",
-    subject: "UIdeck",
-    content:
-      "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda dolor dolore esse modi nesciunt, nobis numquam sed sequi sunt totam!",
-    time: "Feb, 15",
-  },
-];
+type EmailContentProps = {
+  emails: Mail[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+  };
+};
 
-export default function EmailContent() {
+const formatTime = (value: Date | string | null) => {
+  if (!value) {
+    return "";
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  return date.toLocaleString();
+};
+
+export default function EmailContent({
+  emails,
+  pagination,
+}: EmailContentProps) {
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
-    new Array(mailData.length).fill(false),
+    new Array(emails.length).fill(false),
   );
   const [starredItems, setStarredItems] = useState<boolean[]>(
-    new Array(mailData.length).fill(false),
+    new Array(emails.length).fill(false),
   );
+
+  useEffect(() => {
+    setCheckedItems(new Array(emails.length).fill(false));
+    setStarredItems(new Array(emails.length).fill(false));
+  }, [emails.length]);
 
   const toggleCheck = (index: number, checked: boolean) => {
     const updated = [...checkedItems];
@@ -130,17 +59,17 @@ export default function EmailContent() {
     setStarredItems(updated);
   };
   const handleSelectAll = (checked: boolean) => {
-    setCheckedItems(new Array(mailData.length).fill(checked));
+    setCheckedItems(new Array(emails.length).fill(checked));
   };
 
   const allChecked = checkedItems.every(Boolean);
 
   return (
-    <div className="rounded-2xl xl:col-span-9 w-full border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div className="rounded-2xl xl:col-span-12 w-full border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <EmailHeader isChecked={allChecked} onSelectAll={handleSelectAll} />
       <SimpleBar className="max-h-[510px] 2xl:max-h-[630px]">
         <div className="divide-y divide-gray-200 dark:divide-gray-800">
-          {mailData.map((mail, index) => (
+          {emails.map((mail, index) => (
             <div
               key={mail.id}
               className="flex cursor-pointer items-center px-4 py-4 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/[0.03]"
@@ -193,37 +122,37 @@ export default function EmailContent() {
 
                 {/* Subject */}
                 <span className="ml-3 text-sm text-gray-700 truncate dark:text-gray-400">
-                  {mail.subject}
+                  {mail.subject || "(no subject)"}
                 </span>
               </div>
 
               {/* Middle Section */}
               <div className="flex items-center w-3/5 gap-3">
-                <p className="text-sm text-gray-500 truncate">{mail.content}</p>
-                {mail.badge && (
-                  <span
-                    className={`hidden rounded-full px-2 py-0.5 text-xs font-medium sm:inline-block ${
-                      mail.badge === "Important"
-                        ? "text-red-700 bg-red-100"
-                        : mail.badge === "Social"
-                          ? "text-green-700 bg-green-100"
-                          : "text-blue-700 bg-blue-100"
-                    }`}
-                  >
-                    {mail.badge}
-                  </span>
-                )}
+                <p className="text-sm text-gray-500 truncate">
+                  {mail.snippet ?? ""}
+                </p>
               </div>
 
               {/* Right Section */}
               <div className="w-1/5 text-right">
-                <span className="block text-xs text-gray-400">{mail.time}</span>
+                <span className="block text-xs text-gray-400">
+                  {formatTime(mail.sentAt)}
+                </span>
+                {mail.from ? (
+                  <span className="block text-xs text-gray-400 truncate">
+                    {mail.from.name ?? mail.from.email}
+                  </span>
+                ) : null}
               </div>
             </div>
           ))}
         </div>
       </SimpleBar>
-      <EmailPagination />
+      <EmailPagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+      />
     </div>
   );
 }

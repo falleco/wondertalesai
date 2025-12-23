@@ -17,6 +17,19 @@ export class IntegrationsRouterBuilder implements RouterBuilder {
       list: this.trpc.procedure.use(authRequired).query(({ ctx }) => {
         return this.integrationsService.listConnections(ctx.user.id);
       }),
+      emailInbox: this.trpc.procedure
+        .use(authRequired)
+        .input(
+          z
+            .object({
+              page: z.number().int().min(1).optional(),
+              pageSize: z.number().int().min(1).max(50).optional(),
+            })
+            .optional(),
+        )
+        .query(({ ctx, input }) => {
+          return this.integrationsService.getEmailInbox(ctx.user.id, input);
+        }),
       remove: this.trpc.procedure
         .use(authRequired)
         .input(
