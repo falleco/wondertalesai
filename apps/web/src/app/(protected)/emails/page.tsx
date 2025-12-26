@@ -1,4 +1,3 @@
-
 import EmailContent from "@web/components/email/EmailInbox/EmailContent";
 import { trpc } from "@web/trpc/server";
 
@@ -36,7 +35,6 @@ export default async function DashboardPage({
           <EmailContent emails={inbox.emails} pagination={inbox.pagination} />
         </div>
       </div>
-      
     </div>
   );
 }

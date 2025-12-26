@@ -34,6 +34,12 @@ export class EmailAttachment {
   @Column('bytea', { name: 'content', nullable: true })
   content!: Buffer | null;
 
+  @Column('boolean', { name: 'llm_processed', default: false })
+  llmProcessed!: boolean;
+
+  @Column('timestamptz', { name: 'llm_processed_at', nullable: true })
+  llmProcessedAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 }

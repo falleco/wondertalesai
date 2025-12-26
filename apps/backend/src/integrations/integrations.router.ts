@@ -17,6 +17,43 @@ export class IntegrationsRouterBuilder implements RouterBuilder {
       list: this.trpc.procedure.use(authRequired).query(({ ctx }) => {
         return this.integrationsService.listConnections(ctx.user.id);
       }),
+      llmList: this.trpc.procedure.use(authRequired).query(({ ctx }) => {
+        return this.integrationsService.listLlmIntegrations(ctx.user.id);
+      }),
+      llmCreate: this.trpc.procedure
+        .use(authRequired)
+        .input(
+          z.object({
+            provider: z.enum(['openai', 'ollama']),
+            model: z.string().min(1),
+            apiKey: z.string().optional(),
+            baseUrl: z.string().optional(),
+            isDefault: z.boolean().optional(),
+          }),
+        )
+        .mutation(({ ctx, input }) => {
+          return this.integrationsService.createLlmIntegration({
+            userId: ctx.user.id,
+            provider: input.provider,
+            model: input.model,
+            apiKey: input.apiKey,
+            baseUrl: input.baseUrl,
+            isDefault: input.isDefault,
+          });
+        }),
+      llmRemove: this.trpc.procedure
+        .use(authRequired)
+        .input(
+          z.object({
+            integrationId: z.string().uuid(),
+          }),
+        )
+        .mutation(({ ctx, input }) => {
+          return this.integrationsService.removeLlmIntegration(
+            ctx.user.id,
+            input.integrationId,
+          );
+        }),
       emailInbox: this.trpc.procedure
         .use(authRequired)
         .input(

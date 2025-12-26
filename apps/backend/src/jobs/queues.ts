@@ -2,6 +2,7 @@ export enum Queues {
   DUMMY = 'dummy',
   EMAIL = 'email',
   EMAIL_SYNC = 'email-sync',
+  LLM_ANALYSIS = 'llm-analysis',
 }
 
 export type DummyPayload = {
@@ -18,4 +19,12 @@ export type EmailSyncPayload = {
   connectionId: string;
   triggerHistoryId?: string;
   reason?: 'initial' | 'push' | 'manual';
+};
+
+export type LlmAnalysisPayload = {
+  type: 'email' | 'thread' | 'attachment';
+  userId: string;
+  messageId?: string;
+  threadId?: string;
+  attachmentId?: string;
 };

@@ -32,6 +32,12 @@ export class EmailThread {
   @Column('int', { name: 'unread_count', default: 0 })
   unreadCount!: number;
 
+  @Column('boolean', { name: 'llm_processed', default: false })
+  llmProcessed!: boolean;
+
+  @Column('timestamptz', { name: 'llm_processed_at', nullable: true })
+  llmProcessedAt!: Date | null;
+
   @Column('jsonb', { name: 'metadata', nullable: true })
   metadata!: Record<string, unknown> | null;
 

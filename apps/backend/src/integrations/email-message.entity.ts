@@ -41,6 +41,12 @@ export class EmailMessage {
   @Column('boolean', { name: 'is_unread', default: true })
   isUnread!: boolean;
 
+  @Column('boolean', { name: 'llm_processed', default: false })
+  llmProcessed!: boolean;
+
+  @Column('timestamptz', { name: 'llm_processed_at', nullable: true })
+  llmProcessedAt!: Date | null;
+
   @Column('jsonb', { name: 'metadata', nullable: true })
   metadata!: Record<string, unknown> | null;
 

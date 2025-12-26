@@ -12,11 +12,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { ComponentType, SVGProps } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ApiKeyModal } from "./api-key-modal";
 import { Modal } from "./ui/modal/modal";
 
 type ConnectedItem = {
   id: string;
+  kind: "gmail" | "llm";
   provider: string;
   name: string;
   description: string;
@@ -50,8 +50,12 @@ const getStatusLabel = (status: string) => {
 
 export default function IntegrationList() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-  const [isOpenAiConnected, setIsOpenAiConnected] = useState(false);
+  const [isLlmModalOpen, setIsLlmModalOpen] = useState(false);
+  const [llmProvider, setLlmProvider] = useState<"openai" | "ollama">("openai");
+  const [llmModel, setLlmModel] = useState("");
+  const [llmApiKey, setLlmApiKey] = useState("");
+  const [llmBaseUrl, setLlmBaseUrl] = useState("");
+  const [llmIsDefault, setLlmIsDefault] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -59,13 +63,9 @@ export default function IntegrationList() {
   const { refetch } = integrationsQuery;
   const removeIntegration = trpc.integrations.remove.useMutation();
   const gmailAuth = trpc.integrations.gmailAuthUrl.useMutation();
-
-  useEffect(() => {
-    const apiKey = localStorage.getItem("openai-api-key");
-    if (apiKey) {
-      setIsOpenAiConnected(true);
-    }
-  }, []);
+  const llmList = trpc.integrations.llmList.useQuery();
+  const llmCreate = trpc.integrations.llmCreate.useMutation();
+  const llmRemove = trpc.integrations.llmRemove.useMutation();
 
   useEffect(() => {
     const status = searchParams.get("status");
@@ -85,6 +85,7 @@ export default function IntegrationList() {
       if (connection.provider === "gmail") {
         items.push({
           id: connection.id,
+          kind: "gmail",
           provider: connection.provider,
           name: "Gmail",
           description: connection.email
@@ -97,28 +98,32 @@ export default function IntegrationList() {
       }
     }
 
-    if (isOpenAiConnected) {
+    const llmConnections = llmList.data ?? [];
+    for (const connection of llmConnections) {
       items.push({
-        id: "openai",
-        provider: "openai",
-        name: "OpenAI",
-        description: "Chave API salva no navegador",
-        status: "connected",
+        id: connection.id,
+        kind: "llm",
+        provider: connection.provider,
+        name: connection.provider === "openai" ? "OpenAI" : "Ollama",
+        description: `Modelo: ${connection.model}`,
+        status: connection.status,
         Icon: ChatGPTIcon,
       });
     }
 
     return items;
-  }, [integrationsQuery.data, isOpenAiConnected]);
+  }, [integrationsQuery.data, llmList.data]);
 
   const isGmailConnected = connectedItems.some(
     (item) => item.provider === "gmail" && item.status === "connected",
   );
 
-  const handleOpenAiDisconnect = () => {
-    localStorage.removeItem("openai-api-key");
-    setIsOpenAiConnected(false);
-    toast.success("OpenAI desconectado com sucesso");
+  const resetLlmForm = () => {
+    setLlmProvider("openai");
+    setLlmModel("");
+    setLlmApiKey("");
+    setLlmBaseUrl("");
+    setLlmIsDefault(false);
   };
 
   const handleRemoveConnection = async (connectionId: string) => {
@@ -131,6 +136,16 @@ export default function IntegrationList() {
     }
   };
 
+  const handleRemoveLlm = async (integrationId: string) => {
+    try {
+      await llmRemove.mutateAsync({ integrationId });
+      toast.success("LLM removida com sucesso");
+      await llmList.refetch();
+    } catch (_error) {
+      toast.error("Nao foi possivel remover a LLM.");
+    }
+  };
+
   const handleGmailConnect = async () => {
     try {
       const redirectTo = `${window.location.origin}/integrations`;
@@ -139,6 +154,31 @@ export default function IntegrationList() {
       window.location.href = response.url;
     } catch (_error) {
       toast.error("Nao foi possivel iniciar a conexao com o Gmail.");
+    }
+  };
+
+  const handleCreateLlm = async () => {
+    try {
+      const baseUrl =
+        llmProvider === "ollama" && !llmBaseUrl
+          ? "http://localhost:11434"
+          : llmBaseUrl || undefined;
+      const apiKey = llmProvider === "openai" ? llmApiKey : undefined;
+
+      await llmCreate.mutateAsync({
+        provider: llmProvider,
+        model: llmModel,
+        apiKey: apiKey || undefined,
+        baseUrl,
+        isDefault: llmIsDefault || undefined,
+      });
+
+      toast.success("LLM adicionada com sucesso");
+      await llmList.refetch();
+      setIsLlmModalOpen(false);
+      resetLlmForm();
+    } catch (_error) {
+      toast.error("Nao foi possivel adicionar a LLM.");
     }
   };
 
@@ -197,28 +237,29 @@ export default function IntegrationList() {
                 </div>
               </div>
               <div>
-                {item.provider === "openai" ? (
-                  <div className="flex items-center gap-x-2">
-                    <button
-                      type="button"
-                      onClick={handleOpenAiDisconnect}
-                      className="px-5 dark:text-gray-400 dark:hover:bg-white/5 py-3 gap-2 text-sm text-gray-600 font-medium rounded-full hover:bg-gray-100 transition flex items-center"
-                    >
-                      <TrashIcon />
-                      Remove
-                    </button>
-                    <span className="px-5 py-3 gap-2 text-sm dark:bg-white/5 text-white font-medium bg-gray-700 transition rounded-full flex items-center">
-                      <CheckMarkIcon2 />
-                      Connected
-                    </span>
-                  </div>
-                ) : (
+                {item.kind === "gmail" ? (
                   <div className="flex items-center gap-x-2">
                     <button
                       type="button"
                       onClick={() => handleRemoveConnection(item.id)}
                       className="px-5 dark:text-gray-400 dark:hover:bg-white/5 py-3 gap-2 text-sm text-gray-600 font-medium rounded-full hover:bg-gray-100 transition flex items-center"
                       disabled={removeIntegration.isPending}
+                    >
+                      <TrashIcon />
+                      Remove
+                    </button>
+                    <span className="px-5 py-3 gap-2 text-sm dark:bg-white/5 text-white font-medium bg-gray-700 transition rounded-full flex items-center">
+                      <CheckMarkIcon2 />
+                      {getStatusLabel(item.status)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-x-2">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLlm(item.id)}
+                      className="px-5 dark:text-gray-400 dark:hover:bg-white/5 py-3 gap-2 text-sm text-gray-600 font-medium rounded-full hover:bg-gray-100 transition flex items-center"
+                      disabled={llmRemove.isPending}
                     >
                       <TrashIcon />
                       Remove
@@ -276,10 +317,10 @@ export default function IntegrationList() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-800 dark:text-white/90">
-                  OpenAI
+                  LLM providers
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Adicione sua chave para usar os modelos GPT.
+                  Conecte OpenAI ou Ollama e escolha o modelo.
                 </p>
               </div>
             </div>
@@ -287,24 +328,116 @@ export default function IntegrationList() {
               type="button"
               onClick={() => {
                 setIsAddModalOpen(false);
-                setIsApiKeyModalOpen(true);
+                setIsLlmModalOpen(true);
               }}
-              disabled={isOpenAiConnected}
               className="px-4 py-2 text-sm font-medium rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:opacity-80 disabled:opacity-50"
             >
-              {isOpenAiConnected ? "Conectado" : "Conectar"}
+              Conectar
             </button>
           </div>
         </div>
       </Modal>
 
-      <ApiKeyModal
-        isOpen={isApiKeyModalOpen}
-        onClose={() => setIsApiKeyModalOpen(false)}
-        onSubmit={() => {
-          setIsOpenAiConnected(true);
+      <Modal
+        isOpen={isLlmModalOpen}
+        onClose={() => {
+          setIsLlmModalOpen(false);
+          resetLlmForm();
         }}
-      />
+        title="Adicionar provedor LLM"
+        description="Configure o provedor e o modelo que sera usado para analisar emails."
+        className={{
+          modal: "dark:bg-[#171F2E]",
+        }}
+      >
+        <form
+          className="mt-8 space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleCreateLlm();
+          }}
+        >
+          <label className="flex flex-col gap-2 text-sm text-gray-600 dark:text-gray-300">
+            Provedor
+            <select
+              className="rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              value={llmProvider}
+              onChange={(event) =>
+                setLlmProvider(event.target.value as "openai" | "ollama")
+              }
+            >
+              <option value="openai">OpenAI</option>
+              <option value="ollama">Ollama</option>
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm text-gray-600 dark:text-gray-300">
+            Modelo
+            <input
+              className="rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              value={llmModel}
+              onChange={(event) => setLlmModel(event.target.value)}
+              placeholder={
+                llmProvider === "openai" ? "gpt-4o-mini" : "llama3.1"
+              }
+              required
+            />
+          </label>
+
+          {llmProvider === "openai" ? (
+            <label className="flex flex-col gap-2 text-sm text-gray-600 dark:text-gray-300">
+              API key
+              <input
+                type="password"
+                className="rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                value={llmApiKey}
+                onChange={(event) => setLlmApiKey(event.target.value)}
+                placeholder="sk-..."
+                required
+              />
+            </label>
+          ) : (
+            <label className="flex flex-col gap-2 text-sm text-gray-600 dark:text-gray-300">
+              Base URL
+              <input
+                className="rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                value={llmBaseUrl}
+                onChange={(event) => setLlmBaseUrl(event.target.value)}
+                placeholder="http://localhost:11434"
+              />
+            </label>
+          )}
+
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <input
+              type="checkbox"
+              checked={llmIsDefault}
+              onChange={(event) => setLlmIsDefault(event.target.checked)}
+            />
+            Usar como provedor principal
+          </label>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setIsLlmModalOpen(false);
+                resetLlmForm();
+              }}
+              className="rounded-full px-4 py-2 text-sm text-gray-600 dark:text-gray-300"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="rounded-full bg-gray-800 px-5 py-2 text-sm font-medium text-white dark:bg-white/10"
+              disabled={llmCreate.isPending}
+            >
+              Salvar
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

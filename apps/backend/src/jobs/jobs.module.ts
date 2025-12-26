@@ -8,6 +8,7 @@ import { IntegrationsModule } from '@server/integrations/integrations.module';
 import { DummConsumer } from './consumers/dummy.consumer';
 import { EmailConsumer } from './consumers/email.consumer';
 import { EmailSyncConsumer } from './consumers/email-sync.consumer';
+import { LlmAnalysisConsumer } from './consumers/llm-analysis.consumer';
 import { JobsController } from './jobs.controller';
 import { JobsService } from './jobs.service';
 import { Queues } from './queues';
@@ -28,6 +29,9 @@ import { Queues } from './queues';
     BullModule.registerQueue({
       name: Queues.EMAIL_SYNC,
     }),
+    BullModule.registerQueue({
+      name: Queues.LLM_ANALYSIS,
+    }),
     BullBoardModule.forFeature({
       name: Queues.DUMMY,
       adapter: BullMQAdapter,
@@ -40,13 +44,23 @@ import { Queues } from './queues';
       name: Queues.EMAIL_SYNC,
       adapter: BullMQAdapter,
     }),
+    BullBoardModule.forFeature({
+      name: Queues.LLM_ANALYSIS,
+      adapter: BullMQAdapter,
+    }),
     // Admin
     BullBoardModule.forRoot({
       route: '/queues',
       adapter: ExpressAdapter, // Or FastifyAdapter from `@bull-board/fastify`
     }),
   ],
-  providers: [JobsService, DummConsumer, EmailConsumer, EmailSyncConsumer],
+  providers: [
+    JobsService,
+    DummConsumer,
+    EmailConsumer,
+    EmailSyncConsumer,
+    LlmAnalysisConsumer,
+  ],
   controllers: [JobsController],
   exports: [JobsService],
 })
