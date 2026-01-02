@@ -28,7 +28,7 @@ const formatTime = (value: Date | string | null) => {
     return "";
   }
   const date = value instanceof Date ? value : new Date(value);
-  return date.toLocaleString();
+  return date.toISOString();
 };
 
 export default function EmailContent({

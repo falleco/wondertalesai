@@ -3,12 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { type AppConfigurationType } from '@server/config/configuration';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
-import { IntegrationsService } from './integrations.service';
+import { DatasourcesService } from './datasources.service';
 
 @Controller('integrations/gmail')
-export class IntegrationsController {
+export class DatasourcesController {
   constructor(
-    private readonly integrationsService: IntegrationsService,
+    private readonly datasourcesService: DatasourcesService,
     private readonly configService: ConfigService<AppConfigurationType>,
   ) {}
 
@@ -23,7 +23,7 @@ export class IntegrationsController {
       return res.status(400).send('Missing OAuth parameters');
     }
 
-    const result = await this.integrationsService.handleGmailCallback(
+    const result = await this.datasourcesService.handleGmailCallback(
       code,
       state,
     );
@@ -44,7 +44,7 @@ export class IntegrationsController {
   @AllowAnonymous()
   @Post('push')
   async handlePush(@Body() body: { message?: { data?: string } }) {
-    return this.integrationsService.handleGmailPushNotification(body);
+    return this.datasourcesService.handleGmailPushNotification(body);
   }
 
   private getDefaultRedirectUrl() {

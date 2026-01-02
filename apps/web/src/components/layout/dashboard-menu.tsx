@@ -47,4 +47,27 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
       </svg>
     ),
   },
+  {
+    href: "/workflow",
+    label: "Workflow",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="22"
+        height="22"
+        viewBox="0 0 22 22"
+        fill="none"
+        role="img"
+        aria-label="Workflow"
+      >
+        <title>Workflow</title>
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M4.25 5.75C4.25 5.33579 4.58579 5 5 5H15C15.4142 5 15.75 5.33579 15.75 5.75C15.75 6.16421 15.4142 6.5 15 6.5H5C4.58579 6.5 4.25 6.16421 4.25 5.75ZM4.25 11C4.25 10.5858 4.58579 10.25 5 10.25H17C17.4142 10.25 17.75 10.5858 17.75 11C17.75 11.4142 17.4142 11.75 17 11.75H5C4.58579 11.75 4.25 11.4142 4.25 11ZM4.25 16.25C4.25 15.8358 4.58579 15.5 5 15.5H13C13.4142 15.5 13.75 15.8358 13.75 16.25C13.75 16.6642 13.4142 17 13 17H5C4.58579 17 4.25 16.6642 4.25 16.25Z"
+          fill="currentColor"
+        />
+      </svg>
+    ),
+  },
 ];

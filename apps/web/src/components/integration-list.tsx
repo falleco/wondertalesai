@@ -59,13 +59,13 @@ export default function IntegrationList() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const integrationsQuery = trpc.integrations.list.useQuery();
-  const { refetch } = integrationsQuery;
-  const removeIntegration = trpc.integrations.remove.useMutation();
-  const gmailAuth = trpc.integrations.gmailAuthUrl.useMutation();
-  const llmList = trpc.integrations.llmList.useQuery();
-  const llmCreate = trpc.integrations.llmCreate.useMutation();
-  const llmRemove = trpc.integrations.llmRemove.useMutation();
+  const datasourcesQuery = trpc.datasources.list.useQuery();
+  const { refetch } = datasourcesQuery;
+  const removeDatasource = trpc.datasources.remove.useMutation();
+  const gmailAuth = trpc.datasources.gmailAuthUrl.useMutation();
+  const llmList = trpc.llm.list.useQuery();
+  const llmCreate = trpc.llm.create.useMutation();
+  const llmRemove = trpc.llm.remove.useMutation();
 
   useEffect(() => {
     const status = searchParams.get("status");
@@ -80,7 +80,7 @@ export default function IntegrationList() {
   const connectedItems = useMemo<ConnectedItem[]>(() => {
     const items: ConnectedItem[] = [];
 
-    const connections = integrationsQuery.data ?? [];
+    const connections = datasourcesQuery.data ?? [];
     for (const connection of connections) {
       if (connection.provider === "gmail") {
         items.push({
@@ -112,7 +112,7 @@ export default function IntegrationList() {
     }
 
     return items;
-  }, [integrationsQuery.data, llmList.data]);
+  }, [datasourcesQuery.data, llmList.data]);
 
   const isGmailConnected = connectedItems.some(
     (item) => item.provider === "gmail" && item.status === "connected",
@@ -128,7 +128,7 @@ export default function IntegrationList() {
 
   const handleRemoveConnection = async (connectionId: string) => {
     try {
-      await removeIntegration.mutateAsync({ connectionId });
+      await removeDatasource.mutateAsync({ connectionId });
       toast.success("Integracao removida com sucesso");
       await refetch();
     } catch (_error) {
@@ -204,7 +204,7 @@ export default function IntegrationList() {
       </div>
 
       <div className="divide-y divide-gray-200 dark:divide-gray-800 dark:border-gray-800 border border-gray-200 px-7 py-2 rounded-xl">
-        {integrationsQuery.isLoading ? (
+        {datasourcesQuery.isLoading ? (
           <div className="py-6 text-sm text-gray-500 dark:text-gray-400">
             Carregando integracoes...
           </div>
@@ -243,7 +243,7 @@ export default function IntegrationList() {
                       type="button"
                       onClick={() => handleRemoveConnection(item.id)}
                       className="px-5 dark:text-gray-400 dark:hover:bg-white/5 py-3 gap-2 text-sm text-gray-600 font-medium rounded-full hover:bg-gray-100 transition flex items-center"
-                      disabled={removeIntegration.isPending}
+                      disabled={removeDatasource.isPending}
                     >
                       <TrashIcon />
                       Remove

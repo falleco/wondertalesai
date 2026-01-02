@@ -1,8 +1,10 @@
 import { INestApplication, Injectable } from '@nestjs/common';
 // import { AccountRouterBuilder } from '@server/account/account.router';
 import { AuthRouterBuilder } from '@server/auth/auth.router';
-import { IntegrationsRouterBuilder } from '@server/integrations/integrations.router';
+import { DatasourcesRouterBuilder } from '@server/datasources/datasources.router';
+import { LlmRouterBuilder } from '@server/llm/llm.router';
 import { TrpcService } from '@server/trpc/trpc.service';
+import { WorkflowRouterBuilder } from '@server/workflow/workflow.router';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import { PrincipalService } from '../auth/principal.service';
 // import { AuthRouterBuilder } from '@server/auth/auth.router';
@@ -15,14 +17,17 @@ import { generateInjectedContext } from './trpc.context';
 export const createAppRouter = (
   trpc: TrpcService,
   authRouter: AuthRouterBuilder,
-  integrationsRouter: IntegrationsRouterBuilder,
+  datasourcesRouter: DatasourcesRouterBuilder,
+  llmRouter: LlmRouterBuilder,
+  workflowRouter: WorkflowRouterBuilder,
 ) => {
   return trpc.router({
     auth: authRouter.buildRouter(),
     // account: this.accountRouter.buildRouter(),
     // user: this.userRouter.buildRouter(),
-    integrations: integrationsRouter.buildRouter(),
-    // llm: this.llmRouter.buildRouter(),
+    datasources: datasourcesRouter.buildRouter(),
+    llm: llmRouter.buildRouter(),
+    workflow: workflowRouter.buildRouter(),
     // checkout: this.checkoutRouter.buildRouter(),
     ping: trpc.procedure.query(() => {
       return 'pong';
@@ -42,14 +47,17 @@ export class TrpcRouter {
     private readonly authRouter: AuthRouterBuilder,
     // private readonly accountRouter: AccountRouterBuilder,
     // private readonly userRouter: UserRouterBuilder,
-    private readonly integrationsRouter: IntegrationsRouterBuilder,
-    // private readonly llmRouter: LLMRouterBuilder,
+    private readonly datasourcesRouter: DatasourcesRouterBuilder,
+    private readonly llmRouter: LlmRouterBuilder,
+    private readonly workflowRouter: WorkflowRouterBuilder,
     // private readonly checkoutRouter: CheckoutRouterBuilder,
   ) {
     this.appRouter = createAppRouter(
       this.trpc,
       this.authRouter,
-      this.integrationsRouter,
+      this.datasourcesRouter,
+      this.llmRouter,
+      this.workflowRouter,
     );
   }
 

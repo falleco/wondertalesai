@@ -20,7 +20,7 @@ export default async function DashboardPage({
 }: DashboardPageProps) {
   const page = parsePage((await searchParams)?.page);
   const pageSize = 20;
-  const inbox = await trpc.integrations.emailInbox.query({
+  const inbox = await trpc.datasources.emailInbox.query({
     page,
     pageSize,
   });

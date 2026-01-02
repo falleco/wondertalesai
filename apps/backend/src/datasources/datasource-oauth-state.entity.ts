@@ -6,7 +6,7 @@ import {
 } from 'typeorm';
 
 @Entity('integration_oauth_state')
-export class IntegrationOauthState {
+export class DatasourceOauthState {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

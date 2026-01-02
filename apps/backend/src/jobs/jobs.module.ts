@@ -4,7 +4,8 @@ import { BullBoardModule } from '@bull-board/nestjs';
 import { BullModule } from '@nestjs/bullmq';
 import { forwardRef, Module } from '@nestjs/common';
 import { BullConfigFactory } from '@server/config/queue.configuration';
-import { IntegrationsModule } from '@server/integrations/integrations.module';
+import { DatasourcesModule } from '@server/datasources/datasources.module';
+import { LlmModule } from '@server/llm/llm.module';
 import { DummConsumer } from './consumers/dummy.consumer';
 import { EmailConsumer } from './consumers/email.consumer';
 import { EmailSyncConsumer } from './consumers/email-sync.consumer';
@@ -18,7 +19,8 @@ import { Queues } from './queues';
     BullModule.forRootAsync({
       useClass: BullConfigFactory,
     }),
-    forwardRef(() => IntegrationsModule),
+    forwardRef(() => DatasourcesModule),
+    forwardRef(() => LlmModule),
     // Available Queues
     BullModule.registerQueue({
       name: Queues.DUMMY,

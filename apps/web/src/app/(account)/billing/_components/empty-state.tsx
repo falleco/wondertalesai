@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Crown, CrownDark } from "./assets";
 
@@ -6,13 +5,8 @@ export async function EmptyState() {
   return (
     <section className="h-screen max-h-185.5 rounded-2xl bg-white border border-[#F2F4F7] dark:bg-[#171F2E] dark:border-[#1D2939] flex flex-col items-center py-23">
       <div className="mb-10">
-        <Image src={Crown} alt="" className="dark:hidden" role="presentation" />
-        <Image
-          src={CrownDark}
-          alt=""
-          className="not-dark:hidden"
-          role="presentation"
-        />
+        <Crown className="dark:hidden" role="presentation" />
+        <CrownDark className="not-dark:hidden" role="presentation" />
       </div>
 
       <h1 className="mb-4 text-2xl text-[#1D2939] dark:text-white/90 font-medium">

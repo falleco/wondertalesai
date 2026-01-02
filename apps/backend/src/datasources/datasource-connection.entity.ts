@@ -6,11 +6,11 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-export type IntegrationProvider = 'gmail' | 'openai';
-export type IntegrationStatus = 'connected' | 'error' | 'revoked' | 'pending';
+export type DatasourceProvider = 'gmail';
+export type DatasourceStatus = 'connected' | 'error' | 'revoked' | 'pending';
 
 @Entity('integration_connection')
-export class IntegrationConnection {
+export class DatasourceConnection {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -18,10 +18,10 @@ export class IntegrationConnection {
   userId!: string;
 
   @Column('text', { name: 'provider' })
-  provider!: IntegrationProvider;
+  provider!: DatasourceProvider;
 
   @Column('text', { name: 'status', default: 'pending' })
-  status!: IntegrationStatus;
+  status!: DatasourceStatus;
 
   @Column('text', { name: 'provider_account_id', nullable: true })
   providerAccountId!: string | null;
