@@ -1,6 +1,7 @@
 import { INestApplication, Injectable } from '@nestjs/common';
 // import { AccountRouterBuilder } from '@server/account/account.router';
 import { AuthRouterBuilder } from '@server/auth/auth.router';
+import { ContactsRouterBuilder } from '@server/contacts/contacts.router';
 import { DatasourcesRouterBuilder } from '@server/datasources/datasources.router';
 import { LlmRouterBuilder } from '@server/llm/llm.router';
 import { TrpcService } from '@server/trpc/trpc.service';
@@ -17,12 +18,14 @@ import { generateInjectedContext } from './trpc.context';
 export const createAppRouter = (
   trpc: TrpcService,
   authRouter: AuthRouterBuilder,
+  contactsRouter: ContactsRouterBuilder,
   datasourcesRouter: DatasourcesRouterBuilder,
   llmRouter: LlmRouterBuilder,
   workflowRouter: WorkflowRouterBuilder,
 ) => {
   return trpc.router({
     auth: authRouter.buildRouter(),
+    contacts: contactsRouter.buildRouter(),
     // account: this.accountRouter.buildRouter(),
     // user: this.userRouter.buildRouter(),
     datasources: datasourcesRouter.buildRouter(),
@@ -47,6 +50,7 @@ export class TrpcRouter {
     private readonly authRouter: AuthRouterBuilder,
     // private readonly accountRouter: AccountRouterBuilder,
     // private readonly userRouter: UserRouterBuilder,
+    private readonly contactsRouter: ContactsRouterBuilder,
     private readonly datasourcesRouter: DatasourcesRouterBuilder,
     private readonly llmRouter: LlmRouterBuilder,
     private readonly workflowRouter: WorkflowRouterBuilder,
@@ -55,6 +59,7 @@ export class TrpcRouter {
     this.appRouter = createAppRouter(
       this.trpc,
       this.authRouter,
+      this.contactsRouter,
       this.datasourcesRouter,
       this.llmRouter,
       this.workflowRouter,

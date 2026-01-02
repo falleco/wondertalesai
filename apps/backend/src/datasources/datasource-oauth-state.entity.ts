@@ -25,6 +25,9 @@ export class DatasourceOauthState {
   @Column('timestamptz', { name: 'expires_at' })
   expiresAt!: Date;
 
+  @Column('timestamptz', { name: 'sync_start_at', nullable: true })
+  syncStartAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 }

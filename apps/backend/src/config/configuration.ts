@@ -84,6 +84,9 @@ export const GetAppConfiguration = async () => {
         redirectUri: config.GMAIL_REDIRECT_URI,
         pubsubTopic: config.GMAIL_PUBSUB_TOPIC,
       },
+      fastmail: {
+        apiKey: config.FASTMAIL_API_KEY,
+      },
     },
   };
 };

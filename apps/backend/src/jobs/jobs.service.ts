@@ -6,6 +6,7 @@ import { Queue } from 'bullmq';
 import {
   DummyPayload,
   EmailSyncPayload,
+  JmapSyncPayload,
   LlmAnalysisPayload,
   Queues,
   SendEmailPayload,
@@ -20,6 +21,8 @@ export class JobsService {
     @InjectQueue(Queues.EMAIL) private emailQueue: Queue<SendEmailPayload>,
     @InjectQueue(Queues.EMAIL_SYNC)
     private emailSyncQueue: Queue<EmailSyncPayload>,
+    @InjectQueue(Queues.JMAP_SYNC)
+    private jmapSyncQueue: Queue<JmapSyncPayload>,
     @InjectQueue(Queues.LLM_ANALYSIS)
     private llmAnalysisQueue: Queue<LlmAnalysisPayload>,
     private readonly configService: ConfigService<AppConfigurationType>,
@@ -43,6 +46,10 @@ export class JobsService {
 
   async enqueueEmailSync(payload: EmailSyncPayload) {
     await this.emailSyncQueue.add('email-sync', payload);
+  }
+
+  async enqueueJmapSync(payload: JmapSyncPayload) {
+    await this.jmapSyncQueue.add('jmap-sync', payload);
   }
 
   async enqueueLlmAnalysis(payload: LlmAnalysisPayload) {

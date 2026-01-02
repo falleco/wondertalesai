@@ -1,16 +1,19 @@
 import WorkflowNav from "@web/components/workflow-nav";
-import WorkflowRuleList from "@web/components/workflow-rule-list";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Workflow",
 };
 
-export default function WorkflowPage() {
+export default function WorkflowLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-6">
       <WorkflowNav />
-      <WorkflowRuleList />
+      {children}
     </div>
   );
 }

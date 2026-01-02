@@ -2,6 +2,7 @@ export enum Queues {
   DUMMY = 'dummy',
   EMAIL = 'email',
   EMAIL_SYNC = 'email-sync',
+  JMAP_SYNC = 'jmap-sync',
   LLM_ANALYSIS = 'llm-analysis',
 }
 
@@ -19,6 +20,11 @@ export type EmailSyncPayload = {
   connectionId: string;
   triggerHistoryId?: string;
   reason?: 'initial' | 'push' | 'manual';
+};
+
+export type JmapSyncPayload = {
+  connectionId: string;
+  reason?: 'initial' | 'manual';
 };
 
 export type LlmAnalysisPayload = {

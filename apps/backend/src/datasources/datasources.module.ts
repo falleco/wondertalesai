@@ -1,6 +1,9 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ContactsModule } from '@server/contacts/contacts.module';
 import { JobsModule } from '@server/jobs/jobs.module';
+import { EmailAnalysis } from '@server/llm/email-analysis.entity';
+import { ThreadAnalysis } from '@server/llm/thread-analysis.entity';
 import { TrpcModule } from '@server/trpc/trpc.module';
 import { DatasourceConnection } from './datasource-connection.entity';
 import { DatasourceOauthState } from './datasource-oauth-state.entity';
@@ -18,6 +21,7 @@ import { EmailThread } from './email-thread.entity';
   imports: [
     forwardRef(() => TrpcModule),
     forwardRef(() => JobsModule),
+    forwardRef(() => ContactsModule),
     TypeOrmModule.forFeature([
       DatasourceConnection,
       DatasourceOauthState,
@@ -27,6 +31,8 @@ import { EmailThread } from './email-thread.entity';
       EmailLabel,
       EmailMessageLabel,
       EmailAttachment,
+      EmailAnalysis,
+      ThreadAnalysis,
     ]),
   ],
   providers: [DatasourcesService, DatasourcesRouterBuilder],

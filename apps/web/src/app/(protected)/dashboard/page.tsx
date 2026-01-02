@@ -1,4 +1,3 @@
-import EmailContent from "@web/components/email/EmailInbox/EmailContent";
 import { trpc } from "@web/trpc/server";
 
 type DashboardPageProps = {
@@ -43,11 +42,6 @@ export default async function DashboardPage({
           <p className="mt-3 text-2xl font-semibold text-gray-800 dark:text-white/90">
             {inbox.stats.totalEmails}
           </p>
-        </div>
-      </div>
-      <div className="sm:h-[calc(100vh-174px)] h-screen xl:h-[calc(100vh-186px)]">
-        <div className="xl:grid xl:grid-cols-12 flex flex-col gap-5 sm:gap-5">
-          <EmailContent emails={inbox.emails} pagination={inbox.pagination} />
         </div>
       </div>
     </div>

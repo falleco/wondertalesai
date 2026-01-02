@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { CacheConfigFactory } from './config/cache.configuration';
 import { GetAppConfiguration } from './config/configuration';
 import { TypeOrmConfigFactory } from './config/orm.configuration';
+import { ContactsModule } from './contacts/contacts.module';
 import { DatasourcesModule } from './datasources/datasources.module';
 import { HealthModule } from './health/health.module';
 import { JobsModule } from './jobs/jobs.module';
@@ -32,6 +33,7 @@ import { WorkflowModule } from './workflow/workflow.module';
     TrpcModule,
     AuthModule,
     JobsModule,
+    ContactsModule,
     DatasourcesModule,
     WorkflowModule,
   ],

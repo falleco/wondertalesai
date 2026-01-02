@@ -4,12 +4,14 @@ type EmailPaginationProps = {
   page: number;
   pageSize: number;
   total: number;
+  basePath?: string;
 };
 
 export default function EmailPagination({
   page,
   pageSize,
   total,
+  basePath = "/emails",
 }: EmailPaginationProps) {
   const totalPages = total > 0 ? Math.ceil(total / pageSize) : 1;
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -17,8 +19,8 @@ export default function EmailPagination({
   const hasPrev = page > 1;
   const hasNext = page < totalPages;
 
-  const prevHref = `/emails?page=${Math.max(page - 1, 1)}`;
-  const nextHref = `/emails?page=${Math.min(page + 1, totalPages)}`;
+  const prevHref = `${basePath}?page=${Math.max(page - 1, 1)}`;
+  const nextHref = `${basePath}?page=${Math.min(page + 1, totalPages)}`;
 
   return (
     <div className="sticky bottom-0 flex items-center rounded-b-2xl justify-between border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-[#171f2f]">

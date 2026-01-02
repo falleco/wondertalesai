@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { href: "/workflow", label: "Rules" },
+  { href: "/workflow/rules", label: "Rules" },
   { href: "/workflow/triggers", label: "Triggers" },
 ];
 

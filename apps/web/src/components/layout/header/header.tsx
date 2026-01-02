@@ -29,7 +29,8 @@ export default function Header({ user }: { user?: User }) {
       "/integrations",
       "/dashboard",
       "/emails",
-      "/workflow",
+      "/contacts",
+      "/workflow/rules",
       "/workflow/triggers",
     ].includes(pathname);
   }, [pathname]);

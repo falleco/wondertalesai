@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-export type DatasourceProvider = 'gmail';
+export type DatasourceProvider = 'fastmail' | 'gmail';
 export type DatasourceStatus = 'connected' | 'error' | 'revoked' | 'pending';
 
 @Entity('integration_connection')

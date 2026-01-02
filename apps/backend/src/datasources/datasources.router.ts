@@ -30,6 +30,19 @@ export class DatasourcesRouterBuilder implements RouterBuilder {
         .query(({ ctx, input }) => {
           return this.datasourcesService.getEmailInbox(ctx.user.id, input);
         }),
+      emailDetails: this.trpc.procedure
+        .use(authRequired)
+        .input(
+          z.object({
+            messageId: z.string().uuid(),
+          }),
+        )
+        .query(({ ctx, input }) => {
+          return this.datasourcesService.getEmailDetails(
+            ctx.user.id,
+            input.messageId,
+          );
+        }),
       remove: this.trpc.procedure
         .use(authRequired)
         .input(
@@ -43,12 +56,26 @@ export class DatasourcesRouterBuilder implements RouterBuilder {
             input.connectionId,
           );
         }),
+      forceReprocess: this.trpc.procedure
+        .use(authRequired)
+        .input(
+          z.object({
+            connectionId: z.string().uuid(),
+          }),
+        )
+        .mutation(({ ctx, input }) => {
+          return this.datasourcesService.forceReprocessConnection(
+            ctx.user.id,
+            input.connectionId,
+          );
+        }),
       gmailAuthUrl: this.trpc.procedure
         .use(authRequired)
         .input(
           z
             .object({
               redirectTo: z.string().optional(),
+              startDate: z.string().optional(),
             })
             .optional(),
         )
@@ -56,6 +83,22 @@ export class DatasourcesRouterBuilder implements RouterBuilder {
           return this.datasourcesService.createGmailAuthUrl(
             ctx.user.id,
             input?.redirectTo,
+            input?.startDate,
+          );
+        }),
+      fastmailConnect: this.trpc.procedure
+        .use(authRequired)
+        .input(
+          z
+            .object({
+              startDate: z.string().optional(),
+            })
+            .optional(),
+        )
+        .mutation(({ ctx, input }) => {
+          return this.datasourcesService.connectFastmail(
+            ctx.user.id,
+            input?.startDate,
           );
         }),
     });

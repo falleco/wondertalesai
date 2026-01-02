@@ -3,6 +3,7 @@
 import {
   ChatGPTIcon,
   CheckMarkIcon2,
+  FastmailIcon,
   GoogleIcon,
   PlusIcon,
   TrashIcon,
@@ -16,13 +17,27 @@ import { Modal } from "./ui/modal/modal";
 
 type ConnectedItem = {
   id: string;
-  kind: "gmail" | "llm";
+  kind: "fastmail" | "gmail" | "llm";
   provider: string;
   name: string;
   description: string;
   status: string;
   lastSyncedAt?: Date | null;
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
+};
+
+const formatDateInputValue = (value: Date) => {
+  const year = value.getFullYear();
+  const month = `${value.getMonth() + 1}`.padStart(2, "0");
+  const day = `${value.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getDefaultSyncStartDate = () => {
+  const now = new Date();
+  const start = new Date(now);
+  start.setMonth(start.getMonth() - 1);
+  return formatDateInputValue(start);
 };
 
 const formatLastSync = (value?: Date | null) => {
@@ -56,13 +71,19 @@ export default function IntegrationList() {
   const [llmApiKey, setLlmApiKey] = useState("");
   const [llmBaseUrl, setLlmBaseUrl] = useState("");
   const [llmIsDefault, setLlmIsDefault] = useState(false);
+  const [reprocessId, setReprocessId] = useState<string | null>(null);
+  const [emailSyncStartDate, setEmailSyncStartDate] = useState(
+    getDefaultSyncStartDate,
+  );
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const datasourcesQuery = trpc.datasources.list.useQuery();
   const { refetch } = datasourcesQuery;
   const removeDatasource = trpc.datasources.remove.useMutation();
+  const forceReprocess = trpc.datasources.forceReprocess.useMutation();
   const gmailAuth = trpc.datasources.gmailAuthUrl.useMutation();
+  const fastmailConnect = trpc.datasources.fastmailConnect.useMutation();
   const llmList = trpc.llm.list.useQuery();
   const llmCreate = trpc.llm.create.useMutation();
   const llmRemove = trpc.llm.remove.useMutation();
@@ -95,6 +116,19 @@ export default function IntegrationList() {
           lastSyncedAt: connection.lastSyncedAt ?? null,
           Icon: GoogleIcon,
         });
+      } else if (connection.provider === "fastmail") {
+        items.push({
+          id: connection.id,
+          kind: "fastmail",
+          provider: connection.provider,
+          name: "Fastmail",
+          description: connection.email
+            ? `Conta conectada: ${connection.email}`
+            : "Conta conectada",
+          status: connection.status,
+          lastSyncedAt: connection.lastSyncedAt ?? null,
+          Icon: FastmailIcon,
+        });
       }
     }
 
@@ -117,6 +151,9 @@ export default function IntegrationList() {
   const isGmailConnected = connectedItems.some(
     (item) => item.provider === "gmail" && item.status === "connected",
   );
+  const isFastmailConnected = connectedItems.some(
+    (item) => item.provider === "fastmail" && item.status === "connected",
+  );
 
   const resetLlmForm = () => {
     setLlmProvider("openai");
@@ -136,6 +173,19 @@ export default function IntegrationList() {
     }
   };
 
+  const handleReprocessConnection = async (connectionId: string) => {
+    try {
+      setReprocessId(connectionId);
+      await forceReprocess.mutateAsync({ connectionId });
+      toast.success("Reprocessamento iniciado");
+      await refetch();
+    } catch (_error) {
+      toast.error("Nao foi possivel iniciar o reprocessamento.");
+    } finally {
+      setReprocessId(null);
+    }
+  };
+
   const handleRemoveLlm = async (integrationId: string) => {
     try {
       await llmRemove.mutateAsync({ integrationId });
@@ -149,11 +199,24 @@ export default function IntegrationList() {
   const handleGmailConnect = async () => {
     try {
       const redirectTo = `${window.location.origin}/integrations`;
-      const response = await gmailAuth.mutateAsync({ redirectTo });
+      const startDate = emailSyncStartDate.trim() || undefined;
+      const response = await gmailAuth.mutateAsync({ redirectTo, startDate });
       setIsAddModalOpen(false);
       window.location.href = response.url;
     } catch (_error) {
       toast.error("Nao foi possivel iniciar a conexao com o Gmail.");
+    }
+  };
+
+  const handleFastmailConnect = async () => {
+    try {
+      const startDate = emailSyncStartDate.trim() || undefined;
+      await fastmailConnect.mutateAsync({ startDate });
+      toast.success("Fastmail conectado com sucesso");
+      setIsAddModalOpen(false);
+      await refetch();
+    } catch (_error) {
+      toast.error("Nao foi possivel conectar o Fastmail.");
     }
   };
 
@@ -195,7 +258,10 @@ export default function IntegrationList() {
         </div>
         <button
           type="button"
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={() => {
+            setEmailSyncStartDate(getDefaultSyncStartDate());
+            setIsAddModalOpen(true);
+          }}
           className="inline-flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-full border border-gray-200 dark:border-gray-700 dark:text-gray-200 dark:bg-gray-800 text-gray-600 hover:opacity-80"
         >
           <PlusIcon />
@@ -237,8 +303,18 @@ export default function IntegrationList() {
                 </div>
               </div>
               <div>
-                {item.kind === "gmail" ? (
+                {item.kind === "gmail" || item.kind === "fastmail" ? (
                   <div className="flex items-center gap-x-2">
+                    <button
+                      type="button"
+                      onClick={() => handleReprocessConnection(item.id)}
+                      className="px-5 dark:text-gray-400 dark:hover:bg-white/5 py-3 gap-2 text-sm text-gray-600 font-medium rounded-full hover:bg-gray-100 transition flex items-center"
+                      disabled={
+                        forceReprocess.isPending || reprocessId === item.id
+                      }
+                    >
+                      Reprocessar
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleRemoveConnection(item.id)}
@@ -286,6 +362,17 @@ export default function IntegrationList() {
         }}
       >
         <div className="mt-8 space-y-4">
+          <label className="flex flex-col gap-2 text-sm text-gray-600 dark:text-gray-300">
+            Data inicial para sincronizacao de emails
+            <input
+              type="date"
+              className="rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              value={emailSyncStartDate}
+              onChange={(event) => setEmailSyncStartDate(event.target.value)}
+              required
+            />
+          </label>
+
           <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 dark:text-white/90 dark:bg-white/5 dark:border-white/5 bg-gray-100 border border-gray-200 rounded-md flex items-center justify-center">
@@ -307,6 +394,30 @@ export default function IntegrationList() {
               className="px-4 py-2 text-sm font-medium rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:opacity-80 disabled:opacity-50"
             >
               {isGmailConnected ? "Conectado" : "Conectar"}
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 dark:text-white/90 dark:bg-white/5 dark:border-white/5 bg-gray-100 border border-gray-200 rounded-md flex items-center justify-center">
+                <FastmailIcon />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                  Fastmail
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Sincronize seus emails com JMAP.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleFastmailConnect}
+              disabled={fastmailConnect.isPending || isFastmailConnected}
+              className="px-4 py-2 text-sm font-medium rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:opacity-80 disabled:opacity-50"
+            >
+              {isFastmailConnected ? "Conectado" : "Conectar"}
             </button>
           </div>
 

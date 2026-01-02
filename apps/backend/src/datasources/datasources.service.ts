@@ -3,9 +3,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AppConfigurationType } from '@server/config/configuration';
+import { ContactsService } from '@server/contacts/contacts.service';
 import { JobsService } from '@server/jobs/jobs.service';
+import { EmailAnalysis } from '@server/llm/email-analysis.entity';
+import { ThreadAnalysis } from '@server/llm/thread-analysis.entity';
 import { In, Repository } from 'typeorm';
-import { DatasourceConnection } from './datasource-connection.entity';
+import {
+  DatasourceConnection,
+  type DatasourceProvider,
+} from './datasource-connection.entity';
 import { DatasourceOauthState } from './datasource-oauth-state.entity';
 import { EmailAttachment } from './email-attachment.entity';
 import { EmailLabel } from './email-label.entity';
@@ -25,6 +31,10 @@ const GMAIL_SCOPES = [
 
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const FASTMAIL_SESSION_URL = 'https://api.fastmail.com/.well-known/jmap';
+const JMAP_USING = ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'];
+const JMAP_PAGE_LIMIT = 50;
+const JMAP_PROVIDERS: DatasourceProvider[] = ['fastmail'];
 const decodeBase64Url = (value: string) => {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
   return Buffer.from(normalized, 'base64');
@@ -105,6 +115,112 @@ type GmailAttachmentResponse = {
   size?: number;
 };
 
+type JmapSession = {
+  apiUrl: string;
+  downloadUrl?: string;
+  accounts: Record<
+    string,
+    {
+      name: string;
+      isPersonal: boolean;
+      isReadOnly: boolean;
+      accountCapabilities?: Record<string, unknown>;
+    }
+  >;
+  primaryAccounts?: Record<string, string>;
+  username?: string;
+};
+
+type JmapMethodCall = [string, Record<string, unknown>, string];
+
+type JmapMailbox = {
+  id: string;
+  name: string;
+  role?: string | null;
+};
+
+type JmapEmailAddress = {
+  name?: string | null;
+  email?: string | null;
+};
+
+type JmapBodyPart = {
+  partId?: string | null;
+  blobId?: string | null;
+  size?: number | null;
+  type?: string | null;
+  name?: string | null;
+  charset?: string | null;
+  disposition?: string | null;
+  cid?: string | null;
+  subParts?: JmapBodyPart[];
+};
+
+type JmapBodyValue = {
+  value?: string;
+  isTruncated?: boolean;
+};
+
+type JmapEmail = {
+  id: string;
+  threadId: string;
+  mailboxIds?: Record<string, boolean>;
+  subject?: string | null;
+  preview?: string | null;
+  receivedAt?: string | null;
+  sentAt?: string | null;
+  from?: JmapEmailAddress[];
+  to?: JmapEmailAddress[];
+  cc?: JmapEmailAddress[];
+  bcc?: JmapEmailAddress[];
+  replyTo?: JmapEmailAddress[];
+  messageId?: string[];
+  keywords?: Record<string, boolean>;
+  bodyStructure?: JmapBodyPart;
+  bodyValues?: Record<string, JmapBodyValue>;
+  textBody?: JmapBodyPart[];
+  htmlBody?: JmapBodyPart[];
+  attachments?: JmapBodyPart[];
+};
+
+type JmapMethodResponse = {
+  methodResponses: [string, Record<string, unknown>, string][];
+};
+
+type JmapEmailQueryResponse = {
+  ids: string[];
+  queryState: string;
+};
+
+type JmapEmailQueryChangesResponse = {
+  added?: { id: string; index?: number }[];
+  removed?: string[];
+  newQueryState: string;
+};
+
+type JmapEmailGetResponse = {
+  list: JmapEmail[];
+};
+
+type JmapMailboxGetResponse = {
+  list: JmapMailbox[];
+};
+
+type JmapAttachment = {
+  blobId: string;
+  name?: string | null;
+  type?: string | null;
+  size?: number | null;
+  disposition?: string | null;
+  cid?: string | null;
+};
+
+type JmapExtractedContent = {
+  textBody: string | null;
+  htmlBody: string | null;
+  attachments: JmapAttachment[];
+};
+
 type ExtractedAttachment = {
   attachmentId?: string;
   filename?: string;
@@ -154,6 +270,84 @@ const parseAddressList = (value?: string): ParsedAddress[] => {
       }
       return { name: null, email: part };
     });
+};
+
+const normalizeJmapAddresses = (
+  addresses?: JmapEmailAddress[],
+): ParsedAddress[] => {
+  if (!addresses) {
+    return [];
+  }
+  return addresses
+    .map((address) => ({
+      name: address.name?.trim() || null,
+      email: address.email?.trim() || '',
+    }))
+    .filter((address) => Boolean(address.email));
+};
+
+const flattenJmapParts = (part?: JmapBodyPart): JmapBodyPart[] => {
+  if (!part) {
+    return [];
+  }
+  const parts = [part];
+  if (part.subParts?.length) {
+    for (const child of part.subParts) {
+      parts.push(...flattenJmapParts(child));
+    }
+  }
+  return parts;
+};
+
+const pickJmapBodyValue = (
+  parts: JmapBodyPart[] | undefined,
+  bodyValues: Record<string, JmapBodyValue> | undefined,
+) => {
+  if (!parts || !bodyValues) {
+    return null;
+  }
+  for (const part of parts) {
+    if (!part.partId) {
+      continue;
+    }
+    const value = bodyValues[part.partId]?.value;
+    if (value) {
+      return value;
+    }
+  }
+  return null;
+};
+
+const buildJmapContent = (email: JmapEmail): JmapExtractedContent => {
+  const textBody = pickJmapBodyValue(email.textBody, email.bodyValues);
+  const htmlBody = pickJmapBodyValue(email.htmlBody, email.bodyValues);
+  const attachments = email.attachments?.length
+    ? email.attachments
+    : flattenJmapParts(email.bodyStructure).filter((part) => {
+        const type = part.type?.toLowerCase() ?? '';
+        if (!part.blobId) {
+          return false;
+        }
+        if (type.startsWith('text/') || type.startsWith('multipart/')) {
+          return false;
+        }
+        return true;
+      });
+
+  return {
+    textBody,
+    htmlBody,
+    attachments: attachments
+      .filter((part) => Boolean(part.blobId))
+      .map((part) => ({
+        blobId: part.blobId ?? '',
+        name: part.name ?? null,
+        type: part.type ?? null,
+        size: part.size ?? null,
+        disposition: part.disposition ?? null,
+        cid: part.cid ?? null,
+      })),
+  };
 };
 
 const extractContentFromPart = (
@@ -243,14 +437,23 @@ export class DatasourcesService {
     private readonly oauthStateRepository: Repository<DatasourceOauthState>,
     @InjectRepository(EmailMessage)
     private readonly messageRepository: Repository<EmailMessage>,
+    @InjectRepository(EmailThread)
+    private readonly threadRepository: Repository<EmailThread>,
     @InjectRepository(EmailParticipant)
     private readonly participantRepository: Repository<EmailParticipant>,
     @InjectRepository(EmailLabel)
     private readonly labelRepository: Repository<EmailLabel>,
+    @InjectRepository(EmailMessageLabel)
+    private readonly messageLabelRepository: Repository<EmailMessageLabel>,
     @InjectRepository(EmailAttachment)
     private readonly attachmentRepository: Repository<EmailAttachment>,
+    @InjectRepository(EmailAnalysis)
+    private readonly emailAnalysisRepository: Repository<EmailAnalysis>,
+    @InjectRepository(ThreadAnalysis)
+    private readonly threadAnalysisRepository: Repository<ThreadAnalysis>,
     private readonly configService: ConfigService<AppConfigurationType>,
     private readonly jobsService: JobsService,
+    private readonly contactsService: ContactsService,
   ) {}
 
   async listConnections(userId: string) {
@@ -367,6 +570,113 @@ export class DatasourcesService {
     };
   }
 
+  async getEmailDetails(userId: string, messageId: string) {
+    const message = await this.messageRepository.findOne({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      return null;
+    }
+
+    const connection = await this.connectionRepository.findOne({
+      where: { id: message.connectionId, userId },
+    });
+
+    if (!connection) {
+      return null;
+    }
+
+    const participants = await this.participantRepository.find({
+      where: { messageId: message.id },
+      order: { createdAt: 'ASC' },
+    });
+
+    const messageLabels = await this.messageLabelRepository.find({
+      where: { messageId: message.id },
+    });
+
+    const labelIds = messageLabels.map((label) => label.labelId);
+    const labels = labelIds.length
+      ? await this.labelRepository.find({
+          where: { id: In(labelIds) },
+        })
+      : [];
+
+    const thread = message.threadId
+      ? await this.threadRepository.findOne({
+          where: { id: message.threadId },
+        })
+      : null;
+
+    const emailAnalysis = await this.emailAnalysisRepository.findOne({
+      where: { messageId: message.id },
+    });
+
+    const threadAnalysis = thread
+      ? await this.threadAnalysisRepository.findOne({
+          where: { threadId: thread.id },
+        })
+      : null;
+
+    const byRole = (role: string) =>
+      participants
+        .filter((participant) => participant.role === role)
+        .map((participant) => ({
+          name: participant.name,
+          email: participant.email,
+        }));
+
+    return {
+      id: message.id,
+      subject: message.subject,
+      snippet: message.snippet,
+      textBody: message.textBody,
+      htmlBody: message.htmlBody,
+      sentAt: message.sentAt,
+      isUnread: message.isUnread,
+      provider: connection.provider,
+      labels: labels.map((label) => ({
+        id: label.id,
+        name: label.name,
+        type: label.type,
+      })),
+      participants: {
+        from: byRole('from'),
+        to: byRole('to'),
+        cc: byRole('cc'),
+        bcc: byRole('bcc'),
+        replyTo: byRole('reply-to'),
+      },
+      thread: thread
+        ? {
+            id: thread.id,
+            subject: thread.subject,
+            messageCount: thread.messageCount,
+            unreadCount: thread.unreadCount,
+          }
+        : null,
+      llm: {
+        email: emailAnalysis
+          ? {
+              summary: emailAnalysis.summary,
+              tags: emailAnalysis.tags,
+              keywords: emailAnalysis.keywords,
+              actions: emailAnalysis.actions,
+            }
+          : null,
+        thread: threadAnalysis
+          ? {
+              summary: threadAnalysis.summary,
+              tags: threadAnalysis.tags,
+              keywords: threadAnalysis.keywords,
+              actions: threadAnalysis.actions,
+            }
+          : null,
+      },
+    };
+  }
+
   async removeConnection(userId: string, connectionId: string) {
     const connection = await this.connectionRepository.findOne({
       where: { id: connectionId, userId },
@@ -439,7 +749,152 @@ export class DatasourcesService {
     return { removed: true };
   }
 
-  async createGmailAuthUrl(userId: string, redirectTo?: string | null) {
+  async forceReprocessConnection(userId: string, connectionId: string) {
+    const connection = await this.connectionRepository.findOne({
+      where: { id: connectionId, userId },
+    });
+
+    if (!connection) {
+      return { queued: false };
+    }
+
+    await this.messageRepository.update(
+      { connectionId: connection.id },
+      { llmProcessed: false, llmProcessedAt: null },
+    );
+
+    await this.threadRepository.update(
+      { connectionId: connection.id },
+      { llmProcessed: false, llmProcessedAt: null },
+    );
+
+    await this.attachmentRepository
+      .createQueryBuilder()
+      .update(EmailAttachment)
+      .set({ llmProcessed: false, llmProcessedAt: null })
+      .where(
+        '"message_id" IN (SELECT id FROM email_message WHERE connection_id = :connectionId)',
+        { connectionId: connection.id },
+      )
+      .execute();
+
+    const messages = await this.messageRepository.find({
+      where: { connectionId: connection.id },
+      select: { id: true, threadId: true },
+    });
+
+    for (const message of messages) {
+      await this.jobsService.enqueueLlmAnalysis({
+        type: 'email',
+        userId: connection.userId,
+        messageId: message.id,
+        threadId: message.threadId ?? undefined,
+      });
+    }
+
+    const attachments = await this.attachmentRepository
+      .createQueryBuilder('attachment')
+      .select(['attachment.id'])
+      .where(
+        '"attachment"."message_id" IN (SELECT id FROM email_message WHERE connection_id = :connectionId)',
+        { connectionId: connection.id },
+      )
+      .getMany();
+
+    for (const attachment of attachments) {
+      await this.jobsService.enqueueLlmAnalysis({
+        type: 'attachment',
+        userId: connection.userId,
+        attachmentId: attachment.id,
+      });
+    }
+
+    if (connection.provider === 'gmail') {
+      await this.jobsService.enqueueEmailSync({
+        connectionId: connection.id,
+        reason: 'manual',
+      });
+    } else if (this.isJmapProvider(connection.provider)) {
+      await this.jobsService.enqueueJmapSync({
+        connectionId: connection.id,
+        reason: 'manual',
+      });
+    }
+
+    return { queued: true };
+  }
+
+  async connectFastmail(userId: string, startDate?: string | null) {
+    const fastmailConfig = this.getFastmailConfig();
+    if (!fastmailConfig?.apiKey) {
+      throw new Error('Missing Fastmail API key');
+    }
+
+    const syncStartAt = this.parseSyncStartAt(startDate);
+    const session = await this.fetchJmapSession(
+      'fastmail',
+      fastmailConfig.apiKey,
+    );
+    const accountId = this.getJmapAccountId(session);
+
+    const existingConnection = await this.connectionRepository.findOne({
+      where: {
+        userId,
+        provider: 'fastmail',
+        providerAccountId: accountId,
+      },
+    });
+
+    const connection =
+      existingConnection ??
+      this.connectionRepository.create({
+        userId,
+        provider: 'fastmail',
+      });
+
+    const syncState = (connection.syncState ?? {}) as {
+      jmap?: { accountId?: string };
+    };
+
+    connection.providerAccountId = accountId;
+    connection.providerEmail =
+      session.username ?? connection.providerEmail ?? null;
+    connection.accessToken = fastmailConfig.apiKey;
+    connection.status = 'connected';
+    connection.metadata = {
+      ...(connection.metadata ?? {}),
+      jmap: {
+        username: session.username ?? null,
+        apiUrl: session.apiUrl,
+        downloadUrl: session.downloadUrl ?? null,
+      },
+    };
+    connection.syncState = {
+      ...syncState,
+      jmap: {
+        ...(syncState.jmap ?? {}),
+        accountId,
+      },
+      syncStartAt: syncStartAt?.toISOString() ?? null,
+    };
+
+    const savedConnection = await this.connectionRepository.save(connection);
+
+    await this.jobsService.enqueueJmapSync({
+      connectionId: savedConnection.id,
+      reason: 'initial',
+    });
+
+    return {
+      connectionId: savedConnection.id,
+    };
+  }
+
+  async createGmailAuthUrl(
+    userId: string,
+    redirectTo?: string | null,
+    startDate?: string | null,
+  ) {
     const gmailConfig = this.getGmailConfig();
 
     if (!gmailConfig?.clientId || !gmailConfig?.clientSecret) {
@@ -449,12 +904,15 @@ export class DatasourcesService {
     const state = randomBytes(16).toString('hex');
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
+    const syncStartAt = this.parseSyncStartAt(startDate);
+
     await this.oauthStateRepository.save({
       userId,
       provider: 'gmail',
       state,
       redirectTo: redirectTo ?? null,
       expiresAt,
+      syncStartAt,
     });
 
     const params = new URLSearchParams({
@@ -536,6 +994,9 @@ export class DatasourcesService {
       ...(connection.syncState ?? {}),
       historyId: profile.historyId,
       initialSyncCompleted: false,
+      syncStartAt: oauthState.syncStartAt
+        ? oauthState.syncStartAt.toISOString()
+        : null,
     };
 
     const savedConnection = await this.connectionRepository.save(connection);
@@ -626,10 +1087,238 @@ export class DatasourcesService {
     return { skipped: true };
   }
 
+  async syncJmapConnection(payload: { connectionId: string }) {
+    const connection = await this.connectionRepository.findOne({
+      where: { id: payload.connectionId },
+    });
+
+    if (!connection) {
+      return { skipped: true };
+    }
+
+    if (!this.isJmapProvider(connection.provider)) {
+      return { skipped: true };
+    }
+
+    if (!connection.accessToken) {
+      throw new Error('Missing JMAP access token');
+    }
+
+    const session = await this.fetchJmapSession(
+      connection.provider,
+      connection.accessToken,
+    );
+    const accountId = this.getJmapAccountId(session);
+    const syncStartAt = this.getSyncStartAt(connection);
+
+    const syncState = (connection.syncState ?? {}) as {
+      jmap?: {
+        accountId?: string;
+        inboxId?: string;
+        queryState?: string;
+      };
+    };
+    const jmapState = {
+      ...(syncState.jmap ?? {}),
+      accountId,
+    };
+
+    const inboxId =
+      jmapState.inboxId ??
+      (await this.getJmapInboxId(session, connection.accessToken, accountId));
+
+    if (!inboxId) {
+      this.logger.warn('JMAP inbox mailbox not found, skipping sync.');
+      return { skipped: true };
+    }
+
+    jmapState.inboxId = inboxId;
+
+    await this.syncJmapLabels(
+      connection,
+      session,
+      connection.accessToken,
+      accountId,
+    );
+
+    if (!jmapState.queryState) {
+      const unreadQuery = await this.queryJmapEmails(
+        session,
+        connection.accessToken,
+        accountId,
+        inboxId,
+        'unread',
+      );
+      await this.persistJmapMessages(
+        connection,
+        session,
+        connection.accessToken,
+        accountId,
+        unreadQuery.ids,
+        false,
+        syncStartAt,
+      );
+
+      const seenQuery = await this.queryJmapEmails(
+        session,
+        connection.accessToken,
+        accountId,
+        inboxId,
+        'seen',
+      );
+      await this.persistJmapMessages(
+        connection,
+        session,
+        connection.accessToken,
+        accountId,
+        seenQuery.ids,
+        true,
+        syncStartAt,
+      );
+
+      jmapState.queryState = unreadQuery.queryState;
+    } else {
+      try {
+        const changes = await this.queryJmapEmailChanges(
+          session,
+          connection.accessToken,
+          accountId,
+          inboxId,
+          jmapState.queryState,
+        );
+
+        const addedIds =
+          changes.added?.map((entry) => entry.id).filter(Boolean) ?? [];
+        if (addedIds.length > 0) {
+          await this.persistJmapMessages(
+            connection,
+            session,
+            connection.accessToken,
+            accountId,
+            addedIds,
+            false,
+            syncStartAt,
+          );
+        }
+
+        if (changes.removed?.length) {
+          await this.messageRepository.update(
+            {
+              connectionId: connection.id,
+              providerMessageId: In(changes.removed),
+            },
+            { isUnread: false },
+          );
+        }
+
+        jmapState.queryState = changes.newQueryState;
+      } catch (error) {
+        this.logger.warn(
+          `JMAP query changes failed, resetting sync state: ${
+            error instanceof Error ? error.message : 'unknown error'
+          }`,
+        );
+        const unreadQuery = await this.queryJmapEmails(
+          session,
+          connection.accessToken,
+          accountId,
+          inboxId,
+          'unread',
+        );
+        await this.persistJmapMessages(
+          connection,
+          session,
+          connection.accessToken,
+          accountId,
+          unreadQuery.ids,
+          false,
+          syncStartAt,
+        );
+        jmapState.queryState = unreadQuery.queryState;
+      }
+    }
+
+    connection.syncState = {
+      ...syncState,
+      jmap: jmapState,
+    };
+    connection.lastSyncedAt = new Date();
+    await this.connectionRepository.save(connection);
+
+    return { synced: true };
+  }
+
   private getGmailConfig() {
     return this.configService.get<AppConfigurationType['integrations']>(
       'integrations',
     )?.gmail;
+  }
+
+  private parseSyncStartAt(value?: string | null) {
+    if (value) {
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+    const now = new Date();
+    const startAt = new Date(now);
+    startAt.setMonth(startAt.getMonth() - 1);
+    return startAt;
+  }
+
+  private getSyncStartAt(connection: DatasourceConnection) {
+    const syncState = (connection.syncState ?? {}) as {
+      syncStartAt?: string | null;
+    };
+    if (!syncState.syncStartAt) {
+      return null;
+    }
+    const parsed = new Date(syncState.syncStartAt);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private buildGmailAfterQuery(startAt: Date) {
+    const timestamp = Math.floor(startAt.getTime() / 1000);
+    return `after:${timestamp}`;
+  }
+
+  private buildContactEntries(entries: ParsedAddress[], firstMetAt: Date) {
+    const byEmail = new Map<
+      string,
+      { email: string; name: string | null; firstMetAt: Date }
+    >();
+
+    for (const entry of entries) {
+      const email = entry.email.trim().toLowerCase();
+      if (!email) {
+        continue;
+      }
+      const existing = byEmail.get(email);
+      if (!existing) {
+        byEmail.set(email, {
+          email,
+          name: entry.name ?? null,
+          firstMetAt,
+        });
+        continue;
+      }
+      if (!existing.name && entry.name) {
+        existing.name = entry.name;
+      }
+    }
+
+    return Array.from(byEmail.values());
+  }
+
+  private getFastmailConfig() {
+    return this.configService.get<AppConfigurationType['integrations']>(
+      'integrations',
+    )?.fastmail;
+  }
+
+  private isJmapProvider(provider: DatasourceProvider) {
+    return JMAP_PROVIDERS.includes(provider);
   }
 
   private async exchangeGmailCode(input: {
@@ -865,6 +1554,7 @@ export class DatasourcesService {
       connection,
       accessToken,
     );
+    const syncStartAt = this.getSyncStartAt(connection);
 
     await this.syncGmailLabels(connection, accessToken);
 
@@ -874,7 +1564,12 @@ export class DatasourcesService {
     };
 
     if (!syncState.initialSyncCompleted) {
-      await this.initialUnreadSync(connection, accessToken, hasReadonlyScope);
+      await this.initialUnreadSync(
+        connection,
+        accessToken,
+        hasReadonlyScope,
+        syncStartAt,
+      );
       syncState.initialSyncCompleted = true;
     }
 
@@ -887,6 +1582,7 @@ export class DatasourcesService {
         accessToken,
         hasReadonlyScope,
         startHistoryId,
+        syncStartAt,
       );
     }
 
@@ -907,13 +1603,18 @@ export class DatasourcesService {
     connection: DatasourceConnection,
     accessToken: string,
     hasReadonlyScope: boolean,
+    syncStartAt: Date | null,
   ) {
     let pageToken: string | undefined;
     let batchCount = 0;
 
     do {
+      const query = syncStartAt
+        ? this.buildGmailAfterQuery(syncStartAt)
+        : undefined;
       const response = await this.listGmailMessages(accessToken, {
         labelIds: ['UNREAD'],
+        query,
         pageToken,
       });
 
@@ -924,6 +1625,7 @@ export class DatasourcesService {
           accessToken,
           message.id,
           hasReadonlyScope,
+          syncStartAt,
         );
       }
 
@@ -937,6 +1639,7 @@ export class DatasourcesService {
     accessToken: string,
     hasReadonlyScope: boolean,
     startHistoryId: string,
+    syncStartAt: Date | null,
   ) {
     let pageToken: string | undefined;
     let latestHistoryId = startHistoryId;
@@ -962,6 +1665,7 @@ export class DatasourcesService {
               accessToken,
               messageId,
               hasReadonlyScope,
+              syncStartAt,
             );
           }
         }
@@ -974,6 +1678,7 @@ export class DatasourcesService {
                 accessToken,
                 record.message.id,
                 hasReadonlyScope,
+                syncStartAt,
               );
             }
           }
@@ -1007,6 +1712,7 @@ export class DatasourcesService {
     accessToken: string,
     messageId: string,
     hasReadonlyScope: boolean,
+    syncStartAt: Date | null,
   ) {
     const message = await this.getGmailMessage(
       accessToken,
@@ -1014,10 +1720,6 @@ export class DatasourcesService {
       hasReadonlyScope ? 'full' : 'metadata',
     );
     const isUnread = message.labelIds?.includes('UNREAD') ?? false;
-
-    if (!isUnread) {
-      return;
-    }
 
     const payload = message.payload;
     const headers = payload?.headers ?? [];
@@ -1029,6 +1731,25 @@ export class DatasourcesService {
     const cc = parseAddressList(getHeaderValue(headers, 'Cc'));
     const bcc = parseAddressList(getHeaderValue(headers, 'Bcc'));
     const replyTo = parseAddressList(getHeaderValue(headers, 'Reply-To'));
+    const messageSentAt = message.internalDate
+      ? new Date(Number(message.internalDate))
+      : null;
+
+    if (syncStartAt && messageSentAt && messageSentAt < syncStartAt) {
+      return;
+    }
+
+    await this.contactsService.upsertContacts(
+      connection.userId,
+      this.buildContactEntries(
+        [from, to, cc, bcc, replyTo].flat(),
+        messageSentAt ?? new Date(),
+      ),
+    );
+
+    // if (!isUnread) {
+    //   return;
+    // }
 
     const content = hasReadonlyScope
       ? buildExtractedContent(payload)
@@ -1084,9 +1805,7 @@ export class DatasourcesService {
       storedMessage.snippet = message.snippet ?? null;
       storedMessage.textBody = content.textBody ?? null;
       storedMessage.htmlBody = content.htmlBody ?? null;
-      storedMessage.sentAt = message.internalDate
-        ? new Date(Number(message.internalDate))
-        : null;
+      storedMessage.sentAt = messageSentAt;
       storedMessage.isUnread = isUnread;
       storedMessage.metadata = {
         ...(storedMessage.metadata ?? {}),
@@ -1312,6 +2031,624 @@ export class DatasourcesService {
 
     const data = (await response.json()) as { scope?: string };
     return data.scope ?? null;
+  }
+
+  private async fetchJmapSession(provider: DatasourceProvider, apiKey: string) {
+    const sessionUrl = this.getJmapSessionUrl(provider);
+    const response = await fetch(sessionUrl, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Failed to fetch JMAP session: ${errorBody}`);
+    }
+
+    return (await response.json()) as JmapSession;
+  }
+
+  private getJmapSessionUrl(provider: DatasourceProvider) {
+    if (provider === 'fastmail') {
+      return FASTMAIL_SESSION_URL;
+    }
+    throw new Error(`Unsupported JMAP provider: ${provider}`);
+  }
+
+  private getJmapAccountId(session: JmapSession) {
+    const primary = session.primaryAccounts?.['urn:ietf:params:jmap:mail'];
+    if (primary) {
+      return primary;
+    }
+    const accountIds = Object.keys(session.accounts ?? {});
+    if (accountIds.length === 0) {
+      throw new Error('No JMAP mail accounts available');
+    }
+    return accountIds[0];
+  }
+
+  private async jmapRequest(
+    session: JmapSession,
+    accessToken: string,
+    methodCalls: JmapMethodCall[],
+  ) {
+    const response = await fetch(session.apiUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        using: JMAP_USING,
+        methodCalls,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`JMAP request failed: ${errorBody}`);
+    }
+
+    return (await response.json()) as JmapMethodResponse;
+  }
+
+  private getJmapMethodResponse<T>(
+    response: JmapMethodResponse,
+    method: string,
+    callId: string,
+  ) {
+    const match = response.methodResponses.find(
+      ([name, _payload, id]) => name === method && id === callId,
+    );
+    if (!match) {
+      throw new Error(`Missing JMAP response for ${method}:${callId}`);
+    }
+    return match[1] as T;
+  }
+
+  private async listJmapMailboxes(
+    session: JmapSession,
+    accessToken: string,
+    accountId: string,
+  ) {
+    const callId = 'mailboxGet';
+    const response = await this.jmapRequest(session, accessToken, [
+      [
+        'Mailbox/get',
+        {
+          accountId,
+          properties: ['id', 'name', 'role'],
+        },
+        callId,
+      ],
+    ]);
+
+    const result = this.getJmapMethodResponse<JmapMailboxGetResponse>(
+      response,
+      'Mailbox/get',
+      callId,
+    );
+    return result.list ?? [];
+  }
+
+  private async getJmapInboxId(
+    session: JmapSession,
+    accessToken: string,
+    accountId: string,
+  ) {
+    const mailboxes = await this.listJmapMailboxes(
+      session,
+      accessToken,
+      accountId,
+    );
+    const inbox =
+      mailboxes.find((mailbox) => mailbox.role === 'inbox') ??
+      mailboxes.find((mailbox) => mailbox.name.toLowerCase() === 'inbox');
+    return inbox?.id ?? null;
+  }
+
+  private async queryJmapEmails(
+    session: JmapSession,
+    accessToken: string,
+    accountId: string,
+    inboxId: string,
+    keywordFilter: 'unread' | 'seen' = 'unread',
+  ) {
+    const callId = 'emailQuery';
+    const filter: Record<string, unknown> = {
+      inMailbox: inboxId,
+    };
+    if (keywordFilter === 'unread') {
+      filter.notKeyword = '$seen';
+    } else if (keywordFilter === 'seen') {
+      filter.hasKeyword = '$seen';
+    }
+
+    const response = await this.jmapRequest(session, accessToken, [
+      [
+        'Email/query',
+        {
+          accountId,
+          filter,
+          sort: [
+            {
+              property: 'receivedAt',
+              isAscending: false,
+            },
+          ],
+          position: 0,
+          limit: JMAP_PAGE_LIMIT,
+        },
+        callId,
+      ],
+    ]);
+
+    return this.getJmapMethodResponse<JmapEmailQueryResponse>(
+      response,
+      'Email/query',
+      callId,
+    );
+  }
+
+  private async queryJmapEmailChanges(
+    session: JmapSession,
+    accessToken: string,
+    accountId: string,
+    inboxId: string,
+    queryState: string,
+  ) {
+    const callId = 'emailQueryChanges';
+    const response = await this.jmapRequest(session, accessToken, [
+      [
+        'Email/queryChanges',
+        {
+          accountId,
+          filter: {
+            inMailbox: inboxId,
+            notKeyword: '$seen',
+          },
+          sinceQueryState: queryState,
+          maxChanges: JMAP_PAGE_LIMIT,
+        },
+        callId,
+      ],
+    ]);
+
+    return this.getJmapMethodResponse<JmapEmailQueryChangesResponse>(
+      response,
+      'Email/queryChanges',
+      callId,
+    );
+  }
+
+  private async getJmapEmails(
+    session: JmapSession,
+    accessToken: string,
+    accountId: string,
+    ids: string[],
+  ) {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const callId = 'emailGet';
+    const response = await this.jmapRequest(session, accessToken, [
+      [
+        'Email/get',
+        {
+          accountId,
+          ids,
+          properties: [
+            'id',
+            'threadId',
+            'mailboxIds',
+            'subject',
+            'preview',
+            'receivedAt',
+            'sentAt',
+            'from',
+            'to',
+            'cc',
+            'bcc',
+            'replyTo',
+            'messageId',
+            'keywords',
+            'bodyStructure',
+            'bodyValues',
+            'textBody',
+            'htmlBody',
+            'attachments',
+          ],
+          bodyProperties: [
+            'partId',
+            'blobId',
+            'size',
+            'type',
+            'name',
+            'charset',
+            'disposition',
+            'cid',
+          ],
+        },
+        callId,
+      ],
+    ]);
+
+    const result = this.getJmapMethodResponse<JmapEmailGetResponse>(
+      response,
+      'Email/get',
+      callId,
+    );
+    return result.list ?? [];
+  }
+
+  private async syncJmapLabels(
+    connection: DatasourceConnection,
+    session: JmapSession,
+    accessToken: string,
+    accountId: string,
+  ) {
+    const mailboxes = await this.listJmapMailboxes(
+      session,
+      accessToken,
+      accountId,
+    );
+    if (mailboxes.length === 0) {
+      return;
+    }
+
+    const entries = mailboxes.map((mailbox) => ({
+      connectionId: connection.id,
+      providerLabelId: mailbox.id,
+      name: mailbox.name,
+      type: mailbox.role ?? null,
+      backgroundColor: null,
+      textColor: null,
+    }));
+
+    await this.labelRepository.upsert(entries, [
+      'connectionId',
+      'providerLabelId',
+    ]);
+  }
+
+  private async persistJmapMessages(
+    connection: DatasourceConnection,
+    session: JmapSession,
+    accessToken: string,
+    accountId: string,
+    messageIds: string[],
+    includeRead = false,
+    syncStartAt: Date | null = null,
+  ) {
+    const uniqueIds = Array.from(new Set(messageIds));
+    for (let i = 0; i < uniqueIds.length; i += JMAP_PAGE_LIMIT) {
+      const batch = uniqueIds.slice(i, i + JMAP_PAGE_LIMIT);
+      const emails = await this.getJmapEmails(
+        session,
+        accessToken,
+        accountId,
+        batch,
+      );
+      for (const email of emails) {
+        await this.persistJmapMessage(
+          connection,
+          session,
+          accessToken,
+          accountId,
+          email,
+          includeRead,
+          syncStartAt,
+        );
+      }
+    }
+  }
+
+  private async persistJmapMessage(
+    connection: DatasourceConnection,
+    session: JmapSession,
+    accessToken: string,
+    accountId: string,
+    email: JmapEmail,
+    includeRead: boolean,
+    syncStartAt: Date | null,
+  ) {
+    const subject = email.subject ?? null;
+    const messageIdHeader = email.messageId?.[0] ?? null;
+    const from = normalizeJmapAddresses(email.from);
+    const to = normalizeJmapAddresses(email.to);
+    const cc = normalizeJmapAddresses(email.cc);
+    const bcc = normalizeJmapAddresses(email.bcc);
+    const replyTo = normalizeJmapAddresses(email.replyTo);
+    const receivedAt = email.receivedAt ?? email.sentAt ?? null;
+    const sentAt = receivedAt ? new Date(receivedAt) : null;
+    const mailboxIds = Object.keys(email.mailboxIds ?? {});
+    const content = buildJmapContent(email);
+    if (syncStartAt && sentAt && sentAt < syncStartAt) {
+      return;
+    }
+
+    await this.contactsService.upsertContacts(
+      connection.userId,
+      this.buildContactEntries(
+        [from, to, cc, bcc, replyTo].flat(),
+        sentAt ?? new Date(),
+      ),
+    );
+
+    const isUnread = !email.keywords?.$seen;
+
+    if (!isUnread && !includeRead) {
+      return;
+    }
+
+    await this.messageRepository.manager.transaction(async (manager) => {
+      const threadRepository = manager.getRepository(EmailThread);
+      const messageRepository = manager.getRepository(EmailMessage);
+      const participantRepository = manager.getRepository(EmailParticipant);
+      const messageLabelRepository = manager.getRepository(EmailMessageLabel);
+      const attachmentRepository = manager.getRepository(EmailAttachment);
+      const labelRepository = manager.getRepository(EmailLabel);
+
+      let thread = await threadRepository.findOne({
+        where: {
+          connectionId: connection.id,
+          providerThreadId: email.threadId,
+        },
+      });
+
+      if (!thread) {
+        thread = threadRepository.create({
+          connectionId: connection.id,
+          providerThreadId: email.threadId,
+        });
+      }
+
+      thread.subject = subject ?? thread.subject ?? null;
+      thread.snippet = email.preview ?? thread.snippet ?? null;
+      thread.lastMessageAt = sentAt ?? thread.lastMessageAt;
+
+      thread = await threadRepository.save(thread);
+
+      let storedMessage = await messageRepository.findOne({
+        where: {
+          connectionId: connection.id,
+          providerMessageId: email.id,
+        },
+      });
+
+      if (!storedMessage) {
+        storedMessage = messageRepository.create({
+          connectionId: connection.id,
+          providerMessageId: email.id,
+        });
+      }
+
+      storedMessage.threadId = thread.id;
+      storedMessage.subject = subject;
+      storedMessage.messageId = messageIdHeader;
+      storedMessage.snippet = email.preview ?? null;
+      storedMessage.textBody = content.textBody;
+      storedMessage.htmlBody = content.htmlBody;
+      storedMessage.sentAt = sentAt;
+      storedMessage.isUnread = isUnread;
+      storedMessage.metadata = {
+        ...(storedMessage.metadata ?? {}),
+        mailboxIds,
+        keywords: email.keywords ?? {},
+      };
+
+      storedMessage = await messageRepository.save(storedMessage);
+
+      await participantRepository.delete({ messageId: storedMessage.id });
+
+      const participants = [
+        ...from.map((entry) => ({ ...entry, role: 'from' as const })),
+        ...to.map((entry) => ({ ...entry, role: 'to' as const })),
+        ...cc.map((entry) => ({ ...entry, role: 'cc' as const })),
+        ...bcc.map((entry) => ({ ...entry, role: 'bcc' as const })),
+        ...replyTo.map((entry) => ({ ...entry, role: 'reply-to' as const })),
+      ].map((entry) =>
+        participantRepository.create({
+          messageId: storedMessage.id,
+          email: entry.email,
+          name: entry.name,
+          role: entry.role,
+        }),
+      );
+
+      if (participants.length > 0) {
+        await participantRepository.save(participants);
+      }
+
+      await messageLabelRepository.delete({ messageId: storedMessage.id });
+
+      if (mailboxIds.length > 0) {
+        const labels = await labelRepository.find({
+          where: {
+            connectionId: connection.id,
+            providerLabelId: In(mailboxIds),
+          },
+        });
+
+        const labelById = new Map(
+          labels.map((label) => [label.providerLabelId, label]),
+        );
+
+        const messageLabels = mailboxIds
+          .map((labelId) => labelById.get(labelId))
+          .filter((label): label is EmailLabel => Boolean(label))
+          .map((label) =>
+            messageLabelRepository.create({
+              messageId: storedMessage.id,
+              labelId: label.id,
+            }),
+          );
+
+        if (messageLabels.length > 0) {
+          await messageLabelRepository.save(messageLabels);
+        }
+      }
+
+      const existingAttachments = await attachmentRepository.find({
+        where: { messageId: storedMessage.id },
+      });
+
+      if (existingAttachments.length > 0) {
+        await attachmentRepository.delete({ messageId: storedMessage.id });
+      }
+
+      let savedAttachments: EmailAttachment[] = [];
+      if (content.attachments.length > 0) {
+        const attachments = await this.buildJmapAttachmentEntities(
+          session,
+          accessToken,
+          accountId,
+          content.attachments,
+          storedMessage.id,
+        );
+
+        if (attachments.length > 0) {
+          savedAttachments = await attachmentRepository.save(attachments);
+        }
+      }
+
+      const unreadCount = await messageRepository.count({
+        where: {
+          threadId: thread.id,
+          isUnread: true,
+        },
+      });
+
+      const messageCount = await messageRepository.count({
+        where: {
+          threadId: thread.id,
+        },
+      });
+
+      thread.unreadCount = unreadCount;
+      thread.messageCount = messageCount;
+      await threadRepository.save(thread);
+
+      if (isUnread && !storedMessage.llmProcessed) {
+        await this.jobsService.enqueueLlmAnalysis({
+          type: 'email',
+          userId: connection.userId,
+          messageId: storedMessage.id,
+          threadId: thread.id,
+        });
+      }
+
+      if (isUnread) {
+        for (const attachment of savedAttachments) {
+          if (!attachment.llmProcessed) {
+            await this.jobsService.enqueueLlmAnalysis({
+              type: 'attachment',
+              userId: connection.userId,
+              attachmentId: attachment.id,
+            });
+          }
+        }
+      }
+    });
+  }
+
+  private async buildJmapAttachmentEntities(
+    session: JmapSession,
+    accessToken: string,
+    accountId: string,
+    attachments: JmapAttachment[],
+    storedMessageId: string,
+  ) {
+    const entities: EmailAttachment[] = [];
+
+    for (const attachment of attachments) {
+      let content: Buffer | null = null;
+      try {
+        content = await this.downloadJmapAttachment(
+          session,
+          accessToken,
+          accountId,
+          attachment,
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Failed to download JMAP attachment ${attachment.blobId}: ${
+            error instanceof Error ? error.message : 'unknown error'
+          }`,
+        );
+      }
+
+      const isInline =
+        attachment.disposition?.toLowerCase() === 'inline' ||
+        Boolean(attachment.cid);
+
+      entities.push(
+        this.attachmentRepository.create({
+          messageId: storedMessageId,
+          providerAttachmentId: attachment.blobId,
+          filename: attachment.name ?? null,
+          mimeType: attachment.type ?? null,
+          size: attachment.size ?? null,
+          isInline,
+          contentId: attachment.cid ?? null,
+          content,
+        }),
+      );
+    }
+
+    return entities;
+  }
+
+  private buildJmapDownloadUrl(
+    template: string,
+    params: {
+      accountId: string;
+      blobId: string;
+      name?: string | null;
+      type?: string | null;
+    },
+  ) {
+    const name = params.name ?? 'attachment';
+    const type = params.type ?? 'application/octet-stream';
+    return template
+      .replace('{accountId}', encodeURIComponent(params.accountId))
+      .replace('{blobId}', encodeURIComponent(params.blobId))
+      .replace('{name}', encodeURIComponent(name))
+      .replace('{type}', encodeURIComponent(type));
+  }
+
+  private async downloadJmapAttachment(
+    session: JmapSession,
+    accessToken: string,
+    accountId: string,
+    attachment: JmapAttachment,
+  ) {
+    if (!session.downloadUrl) {
+      return null;
+    }
+
+    const url = this.buildJmapDownloadUrl(session.downloadUrl, {
+      accountId,
+      blobId: attachment.blobId,
+      name: attachment.name ?? undefined,
+      type: attachment.type ?? undefined,
+    });
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Failed to fetch JMAP blob: ${errorBody}`);
+    }
+
+    const buffer = await response.arrayBuffer();
+    return Buffer.from(buffer);
   }
 
   private pickLatestHistoryId(historyIds: Array<string | undefined>) {
