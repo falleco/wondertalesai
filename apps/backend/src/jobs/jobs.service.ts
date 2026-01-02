@@ -5,7 +5,7 @@ import { type AppConfigurationType } from '@server/config/configuration';
 import { Queue } from 'bullmq';
 import {
   DummyPayload,
-  EmailSyncPayload,
+  GmailSyncPayload,
   JmapSyncPayload,
   LlmAnalysisPayload,
   Queues,
@@ -19,8 +19,8 @@ export class JobsService {
   constructor(
     @InjectQueue(Queues.DUMMY) private dummyQueue: Queue<DummyPayload>,
     @InjectQueue(Queues.EMAIL) private emailQueue: Queue<SendEmailPayload>,
-    @InjectQueue(Queues.EMAIL_SYNC)
-    private emailSyncQueue: Queue<EmailSyncPayload>,
+    @InjectQueue(Queues.GMAIL_SYNC)
+    private gmailSyncQueue: Queue<GmailSyncPayload>,
     @InjectQueue(Queues.JMAP_SYNC)
     private jmapSyncQueue: Queue<JmapSyncPayload>,
     @InjectQueue(Queues.LLM_ANALYSIS)
@@ -44,8 +44,8 @@ export class JobsService {
     await this.emailQueue.add('send-email', payload);
   }
 
-  async enqueueEmailSync(payload: EmailSyncPayload) {
-    await this.emailSyncQueue.add('email-sync', payload);
+  async enqueueGmailSync(payload: GmailSyncPayload) {
+    await this.gmailSyncQueue.add('gmail-sync', payload);
   }
 
   async enqueueJmapSync(payload: JmapSyncPayload) {

@@ -8,7 +8,7 @@ import { DatasourcesModule } from '@server/datasources/datasources.module';
 import { LlmModule } from '@server/llm/llm.module';
 import { DummConsumer } from './consumers/dummy.consumer';
 import { EmailConsumer } from './consumers/email.consumer';
-import { EmailSyncConsumer } from './consumers/email-sync.consumer';
+import { GmailSyncConsumer } from './consumers/gmail-sync.consumer';
 import { JmapSyncConsumer } from './consumers/jmap-sync.consumer';
 import { LlmAnalysisConsumer } from './consumers/llm-analysis.consumer';
 import { JobsController } from './jobs.controller';
@@ -30,7 +30,7 @@ import { Queues } from './queues';
       name: Queues.EMAIL,
     }),
     BullModule.registerQueue({
-      name: Queues.EMAIL_SYNC,
+      name: Queues.GMAIL_SYNC,
     }),
     BullModule.registerQueue({
       name: Queues.JMAP_SYNC,
@@ -47,7 +47,7 @@ import { Queues } from './queues';
       adapter: BullMQAdapter,
     }),
     BullBoardModule.forFeature({
-      name: Queues.EMAIL_SYNC,
+      name: Queues.GMAIL_SYNC,
       adapter: BullMQAdapter,
     }),
     BullBoardModule.forFeature({
@@ -68,7 +68,7 @@ import { Queues } from './queues';
     JobsService,
     DummConsumer,
     EmailConsumer,
-    EmailSyncConsumer,
+    GmailSyncConsumer,
     JmapSyncConsumer,
     LlmAnalysisConsumer,
   ],

@@ -16,6 +16,8 @@ import { EmailMessage } from './email-message.entity';
 import { EmailMessageLabel } from './email-message-label.entity';
 import { EmailParticipant } from './email-participant.entity';
 import { EmailThread } from './email-thread.entity';
+import { GmailService } from './gmail.service';
+import { JmapService } from './jmap.service';
 
 @Module({
   imports: [
@@ -35,7 +37,12 @@ import { EmailThread } from './email-thread.entity';
       ThreadAnalysis,
     ]),
   ],
-  providers: [DatasourcesService, DatasourcesRouterBuilder],
+  providers: [
+    DatasourcesService,
+    DatasourcesRouterBuilder,
+    GmailService,
+    JmapService,
+  ],
   controllers: [DatasourcesController],
   exports: [DatasourcesService, DatasourcesRouterBuilder],
 })

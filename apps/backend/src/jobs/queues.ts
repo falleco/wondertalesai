@@ -1,7 +1,7 @@
 export enum Queues {
   DUMMY = 'dummy',
   EMAIL = 'email',
-  EMAIL_SYNC = 'email-sync',
+  GMAIL_SYNC = 'gmail-sync',
   JMAP_SYNC = 'jmap-sync',
   LLM_ANALYSIS = 'llm-analysis',
 }
@@ -16,7 +16,7 @@ export type SendEmailPayload = {
   payload: Record<string, unknown>;
 };
 
-export type EmailSyncPayload = {
+export type GmailSyncPayload = {
   connectionId: string;
   triggerHistoryId?: string;
   reason?: 'initial' | 'push' | 'manual';

@@ -1,10 +1,15 @@
 "use server";
 
 import type { AppRouter } from "@server/trpc/trpc.router";
-import { createTRPCClient, httpBatchLink, loggerLink } from "@trpc/client";
+import {
+  createTRPCClient,
+  httpBatchLink,
+  httpBatchStreamLink,
+  loggerLink,
+} from "@trpc/client";
 import { createServerSideHelpers } from "@trpc/react-query/server";
 import { env } from "@web/env";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { cache } from "react";
 import superjson from "superjson";
 import { makeQueryClient } from "./query-client";
@@ -22,8 +27,10 @@ export const trpc = createTRPCClient<AppRouter>({
     httpBatchLink({
       url: `${env.NEXT_PUBLIC_API_BASE_URL}/trpc`,
       async headers() {
+        // console.log("headers", await headers());
         const heads = new Map();
         heads.set("cookie", (await cookies()).toString());
+        // console.log("cookies", (await cookies()).toString());
         heads.set("x-trpc-source", "rsc");
         return Object.fromEntries(heads);
       },
