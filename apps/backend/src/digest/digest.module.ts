@@ -11,10 +11,10 @@ import { JobsModule } from '@server/jobs/jobs.module';
 import { Queues } from '@server/jobs/queues';
 import { LlmModule } from '@server/llm/llm.module';
 import { UserPreferences } from '@server/noise/entities/user-preferences.entity';
-import { DigestController } from './digest.controller';
+import { TrpcModule } from '@server/trpc/trpc.module';
+import { DigestRouterBuilder } from './digest.router';
 import { DigestService } from './digest.service';
 import { DigestItem } from './digest-item.entity';
-import { DigestPreferencesController } from './digest-preferences.controller';
 import { DigestRun } from './digest-run.entity';
 
 @Module({
@@ -22,6 +22,7 @@ import { DigestRun } from './digest-run.entity';
     forwardRef(() => AuthModule),
     forwardRef(() => JobsModule),
     forwardRef(() => LlmModule),
+    forwardRef(() => TrpcModule),
     TypeOrmModule.forFeature([
       DigestRun,
       DigestItem,
@@ -36,8 +37,8 @@ import { DigestRun } from './digest-run.entity';
       name: Queues.EMAIL,
     }),
   ],
-  providers: [DigestService],
-  controllers: [DigestController, DigestPreferencesController],
-  exports: [DigestService],
+  providers: [DigestService, DigestRouterBuilder],
+  controllers: [],
+  exports: [DigestService, DigestRouterBuilder],
 })
 export class DigestModule {}

@@ -1,17 +1,18 @@
 "use client";
 
+import { trpc } from "@web/trpc/react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type DigestRun = {
   id: string;
   type: "daily" | "weekly";
-  periodStart: string;
-  periodEnd: string;
+  periodStart: Date | string;
+  periodEnd: Date | string;
   status: string;
   subject: string | null;
-  sentAt: string | null;
+  sentAt: Date | string | null;
   stats: Record<string, unknown>;
 };
 
@@ -34,56 +35,43 @@ export default function DigestsPage() {
     digestTimezone: "UTC",
     digestMaxItems: 30,
   });
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [manualType, setManualType] = useState<"daily" | "weekly">("daily");
-
-  const fetchDigests = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/digests");
-      if (!response.ok) {
-        throw new Error("failed");
-      }
-      const data = (await response.json()) as { items: DigestRun[] };
-      setDigests(data.items ?? []);
-    } catch (_error) {
-      toast.error("Nao foi possivel carregar os digests.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const fetchPreferences = useCallback(async () => {
-    try {
-      const response = await fetch("/api/preferences/digest");
-      if (!response.ok) {
-        throw new Error("failed");
-      }
-      const data = (await response.json()) as DigestPreferences;
-      setPreferences(data);
-    } catch (_error) {
-      toast.error("Nao foi possivel carregar preferencias.");
-    }
-  }, []);
+  const digestsQuery = trpc.digests.list.useQuery({ page: 1, pageSize: 20 });
+  const preferencesQuery = trpc.digests.preferences.useQuery();
+  const updatePreferencesMutation =
+    trpc.digests.updatePreferences.useMutation();
+  const runDigestMutation = trpc.digests.run.useMutation();
 
   useEffect(() => {
-    fetchDigests();
-    fetchPreferences();
-  }, [fetchDigests, fetchPreferences]);
+    if (digestsQuery.data) {
+      setDigests(digestsQuery.data.items ?? []);
+    }
+  }, [digestsQuery.data]);
+
+  useEffect(() => {
+    if (digestsQuery.error) {
+      toast.error("Nao foi possivel carregar os digests.");
+    }
+  }, [digestsQuery.error]);
+
+  useEffect(() => {
+    if (preferencesQuery.data) {
+      setPreferences(preferencesQuery.data);
+    }
+  }, [preferencesQuery.data]);
+
+  useEffect(() => {
+    if (preferencesQuery.error) {
+      toast.error("Nao foi possivel carregar preferencias.");
+    }
+  }, [preferencesQuery.error]);
 
   const handleSavePreferences = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch("/api/preferences/digest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(preferences),
-      });
-      if (!response.ok) {
-        throw new Error("failed");
-      }
+      await updatePreferencesMutation.mutateAsync(preferences);
       toast.success("Preferencias salvas.");
     } catch (_error) {
       toast.error("Nao foi possivel salvar preferencias.");
@@ -95,16 +83,9 @@ export default function DigestsPage() {
   const handleManualRun = async () => {
     setIsRunning(true);
     try {
-      const response = await fetch("/api/digests/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: manualType }),
-      });
-      if (!response.ok) {
-        throw new Error("failed");
-      }
+      await runDigestMutation.mutateAsync({ type: manualType });
       toast.success("Digest em execucao.");
-      await fetchDigests();
+      await digestsQuery.refetch();
     } catch (_error) {
       toast.error("Nao foi possivel executar.");
     } finally {
@@ -255,7 +236,7 @@ export default function DigestsPage() {
             Historico
           </h2>
         </div>
-        {isLoading ? (
+        {digestsQuery.isLoading ? (
           <div className="p-6 text-sm text-gray-500 dark:text-gray-400">
             Carregando digests...
           </div>

@@ -10,14 +10,14 @@ import { TrpcModule } from '@server/trpc/trpc.module';
 import { WorkflowRule } from '@server/workflow/entities/workflow-rule.entity';
 import { AttachmentAnalysis } from './entities/attachment-analysis.entity';
 import { EmailAnalysis } from './entities/email-analysis.entity';
-import { LlmRouterBuilder } from './llm.router';
-import { LlmService } from './services/llm.service';
 import { LlmIntegration } from './entities/llm-integration.entity';
 import { LlmUsage } from './entities/llm-usage.entity';
+import { ThreadAnalysis } from './entities/thread-analysis.entity';
+import { LlmRouterBuilder } from './llm.router';
+import { LlmService } from './services/llm.service';
 import { OllamaService } from './services/ollama.service';
 import { OpenAiService } from './services/openai.service';
 import { PromptService } from './services/prompt.service';
-import { ThreadAnalysis } from './entities/thread-analysis.entity';
 
 @Module({
   imports: [

@@ -1,5 +1,6 @@
 "use client";
 
+import { trpc } from "@web/trpc/react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -9,8 +10,8 @@ type DigestDetail = {
     id: string;
     subject: string | null;
     contentText: string | null;
-    periodStart: string;
-    periodEnd: string;
+    periodStart: Date | string;
+    periodEnd: Date | string;
     status: string;
     type: string;
   };
@@ -22,7 +23,7 @@ type DigestDetail = {
     category: string | null;
     isCritical: boolean;
     actionRequired: boolean;
-    dueDate: string | null;
+    dueDate: Date | string | null;
   }>;
 };
 
@@ -30,31 +31,25 @@ export default function DigestDetailPage() {
   const params = useParams();
   const digestId = params?.id as string;
   const [detail, setDetail] = useState<DigestDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+
+  const digestQuery = trpc.digests.detail.useQuery(
+    { id: digestId ?? "" },
+    { enabled: Boolean(digestId) },
+  );
 
   useEffect(() => {
-    const fetchDigest = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`/api/digests/${digestId}`);
-        if (!response.ok) {
-          throw new Error("failed");
-        }
-        const data = (await response.json()) as DigestDetail;
-        setDetail(data);
-      } catch (_error) {
-        toast.error("Nao foi possivel carregar o digest.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (digestId) {
-      fetchDigest();
+    if (digestQuery.data) {
+      setDetail(digestQuery.data);
     }
-  }, [digestId]);
+  }, [digestQuery.data]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (digestQuery.error) {
+      toast.error("Nao foi possivel carregar o digest.");
+    }
+  }, [digestQuery.error]);
+
+  if (digestQuery.isLoading) {
     return (
       <div className="p-6 text-sm text-gray-500 dark:text-gray-400">
         Carregando digest...

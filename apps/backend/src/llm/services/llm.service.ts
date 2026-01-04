@@ -10,12 +10,15 @@ import { type LlmAnalysisPayload } from '@server/jobs/queues';
 import { Repository } from 'typeorm';
 import { AttachmentAnalysis } from '../entities/attachment-analysis.entity';
 import { EmailAnalysis } from '../entities/email-analysis.entity';
-import { LlmIntegration, type LlmProvider } from '../entities/llm-integration.entity';
+import {
+  LlmIntegration,
+  type LlmProvider,
+} from '../entities/llm-integration.entity';
 import { LlmUsage } from '../entities/llm-usage.entity';
+import { ThreadAnalysis } from '../entities/thread-analysis.entity';
 import { OllamaService } from './ollama.service';
 import { OpenAiService } from './openai.service';
 import { PromptService } from './prompt.service';
-import { ThreadAnalysis } from '../entities/thread-analysis.entity';
 
 const MAX_LLM_INPUT_CHARS = 8000;
 const SYSTEM_PROMPT =

@@ -93,7 +93,9 @@ const getSenderDomain = (email?: string | null) => {
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
-const getSuggestedAction = (links: string[]) => {
+const getSuggestedAction = (
+  links: string[],
+): 'send_mailto' | 'open_link' | 'block' => {
   const hasMailto = links.some((link) => link.startsWith('mailto:'));
   if (hasMailto) {
     return 'send_mailto';

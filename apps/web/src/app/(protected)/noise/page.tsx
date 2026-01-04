@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { trpc } from "@web/trpc/react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type SenderItem = {
@@ -43,43 +44,39 @@ export default function NoisePage() {
   });
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [isPlanning, setIsPlanning] = useState(false);
 
-  const fetchSenders = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/noise/senders");
-      if (!response.ok) {
-        throw new Error("failed");
-      }
-      const data = (await response.json()) as {
-        items: SenderItem[];
-        preferences: Preferences;
-      };
-      setItems(data.items ?? []);
-      setPreferences(data.preferences ?? { weeklyCleanupDigestEnabled: true });
-    } catch (_error) {
-      toast.error("Nao foi possivel carregar os remetentes.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const sendersQuery = trpc.noise.senders.useQuery({ limit: 30 });
+  const evaluateMutation = trpc.noise.evaluate.useMutation();
+  const blockMutation = trpc.noise.block.useMutation();
+  const planMutation = trpc.noise.unsubscribePlan.useMutation();
+  const eventMutation = trpc.noise.unsubscribeEvent.useMutation();
+  const updatePreferencesMutation = trpc.noise.updatePreferences.useMutation();
 
   useEffect(() => {
-    fetchSenders();
-  }, [fetchSenders]);
+    if (sendersQuery.data) {
+      setItems(sendersQuery.data.items ?? []);
+      setPreferences(
+        sendersQuery.data.preferences ?? {
+          weeklyCleanupDigestEnabled: true,
+        },
+      );
+    }
+  }, [sendersQuery.data]);
+
+  useEffect(() => {
+    if (sendersQuery.error) {
+      toast.error("Nao foi possivel carregar os remetentes.");
+    }
+  }, [sendersQuery.error]);
 
   const handleEvaluate = async () => {
     setIsEvaluating(true);
     try {
-      const response = await fetch("/api/noise/evaluate", { method: "POST" });
-      if (!response.ok) {
-        throw new Error("failed");
-      }
+      await evaluateMutation.mutateAsync();
       toast.success("Avaliacao concluida.");
-      await fetchSenders();
+      await sendersQuery.refetch();
     } catch (_error) {
       toast.error("Nao foi possivel executar a avaliacao.");
     } finally {
@@ -93,16 +90,10 @@ export default function NoisePage() {
     }
     setIsPlanning(true);
     try {
-      const response = await fetch("/api/noise/unsubscribe/plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ senderProfileIds: selectedIds }),
+      const data = await planMutation.mutateAsync({
+        senderProfileIds: selectedIds,
       });
-      if (!response.ok) {
-        throw new Error("failed");
-      }
-      const data = (await response.json()) as { items: PlanItem[] };
-      setPlanItems(data.items ?? []);
+      setPlanItems((data?.items ?? []) as PlanItem[]);
     } catch (_error) {
       toast.error("Nao foi possivel gerar o plano.");
     } finally {
@@ -112,19 +103,12 @@ export default function NoisePage() {
 
   const handleBlock = async (senderProfileId: string) => {
     try {
-      const response = await fetch("/api/noise/block", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          senderProfileId,
-          action: "moveToNoise",
-        }),
+      await blockMutation.mutateAsync({
+        senderProfileId,
+        action: "moveToNoise",
       });
-      if (!response.ok) {
-        throw new Error("failed");
-      }
       toast.success("Remetente bloqueado.");
-      await fetchSenders();
+      await sendersQuery.refetch();
     } catch (_error) {
       toast.error("Nao foi possivel bloquear.");
     }
@@ -132,19 +116,12 @@ export default function NoisePage() {
 
   const handleIgnore = async (senderProfileId: string) => {
     try {
-      const response = await fetch("/api/noise/unsubscribe/event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          senderProfileId,
-          actionType: "ignored",
-        }),
+      await eventMutation.mutateAsync({
+        senderProfileId,
+        actionType: "ignored",
       });
-      if (!response.ok) {
-        throw new Error("failed");
-      }
       toast.success("Remetente ignorado.");
-      await fetchSenders();
+      await sendersQuery.refetch();
     } catch (_error) {
       toast.error("Nao foi possivel atualizar.");
     }
@@ -155,11 +132,7 @@ export default function NoisePage() {
     actionType: "opened_link" | "sent_mailto" | "marked_done",
   ) => {
     try {
-      await fetch("/api/noise/unsubscribe/event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ senderProfileId, actionType }),
-      });
+      await eventMutation.mutateAsync({ senderProfileId, actionType });
     } catch (_error) {
       toast.error("Nao foi possivel registrar a acao.");
     }
@@ -171,14 +144,9 @@ export default function NoisePage() {
       weeklyCleanupDigestEnabled: value,
     }));
     try {
-      const response = await fetch("/api/preferences", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weeklyCleanupDigestEnabled: value }),
+      await updatePreferencesMutation.mutateAsync({
+        weeklyCleanupDigestEnabled: value,
       });
-      if (!response.ok) {
-        throw new Error("failed");
-      }
       toast.success("Preferencia atualizada.");
     } catch (_error) {
       toast.error("Nao foi possivel atualizar preferencia.");
@@ -263,7 +231,7 @@ export default function NoisePage() {
           </button>
         </div>
 
-        {isLoading ? (
+        {sendersQuery.isLoading ? (
           <div className="p-6 text-sm text-gray-500 dark:text-gray-400">
             Carregando remetentes...
           </div>
