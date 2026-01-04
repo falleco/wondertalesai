@@ -21,10 +21,20 @@ export class WorkflowRouterBuilder implements RouterBuilder {
     });
 
     return this.trpc.router({
-      list: this.trpc.procedure.use(authRequired).query(({ ctx }) => {
-        return this.workflowService.listRules(ctx.user.id);
-      }),
+      list: this.trpc.procedure
+        .meta({
+          tags: ['Workflow'],
+          summary: 'List workflows',
+        })
+        .use(authRequired)
+        .query(({ ctx }) => {
+          return this.workflowService.listRules(ctx.user.id);
+        }),
       create: this.trpc.procedure
+        .meta({
+          tags: ['Workflow'],
+          summary: 'Create workflow',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -41,10 +51,20 @@ export class WorkflowRouterBuilder implements RouterBuilder {
             outputTags: input.outputTags,
           });
         }),
-      triggersList: this.trpc.procedure.use(authRequired).query(({ ctx }) => {
-        return this.workflowService.listTriggers(ctx.user.id);
-      }),
+      triggersList: this.trpc.procedure
+        .meta({
+          tags: ['Workflow'],
+          summary: 'List workflow triggers',
+        })
+        .use(authRequired)
+        .query(({ ctx }) => {
+          return this.workflowService.listTriggers(ctx.user.id);
+        }),
       triggerCreate: this.trpc.procedure
+        .meta({
+          tags: ['Workflow'],
+          summary: 'Create workflow trigger',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -65,6 +85,10 @@ export class WorkflowRouterBuilder implements RouterBuilder {
           });
         }),
       triggerUpdate: this.trpc.procedure
+        .meta({
+          tags: ['Workflow'],
+          summary: 'Update workflow trigger',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -89,6 +113,10 @@ export class WorkflowRouterBuilder implements RouterBuilder {
           });
         }),
       triggerPause: this.trpc.procedure
+        .meta({
+          tags: ['Workflow'],
+          summary: 'Pause workflow trigger',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -103,6 +131,10 @@ export class WorkflowRouterBuilder implements RouterBuilder {
           });
         }),
       triggerResume: this.trpc.procedure
+        .meta({
+          tags: ['Workflow'],
+          summary: 'Resume workflow trigger',
+        })
         .use(authRequired)
         .input(
           z.object({

@@ -38,9 +38,14 @@ export const createAppRouter = (
     noise: noiseRouter.buildRouter(),
     workflow: workflowRouter.buildRouter(),
     // checkout: this.checkoutRouter.buildRouter(),
-    ping: trpc.procedure.query(() => {
-      return 'pong';
-    }),
+    ping: trpc.procedure
+      .meta({
+        tags: ['System'],
+        summary: 'Health check',
+      })
+      .query(() => {
+        return 'pong';
+      }),
   });
 };
 

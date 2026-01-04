@@ -15,6 +15,10 @@ export class ContactsRouterBuilder implements RouterBuilder {
   buildRouter() {
     return this.trpc.router({
       list: this.trpc.procedure
+        .meta({
+          tags: ['Contacts'],
+          summary: 'List contacts',
+        })
         .use(authRequired)
         .input(
           z

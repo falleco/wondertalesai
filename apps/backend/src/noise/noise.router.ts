@@ -30,6 +30,10 @@ export class NoiseRouterBuilder implements RouterBuilder {
   buildRouter() {
     return this.trpc.router({
       senders: this.trpc.procedure
+        .meta({
+          tags: ['Noise'],
+          summary: 'List sender profiles',
+        })
         .use(authRequired)
         .input(
           z
@@ -44,10 +48,20 @@ export class NoiseRouterBuilder implements RouterBuilder {
             input?.limit,
           );
         }),
-      evaluate: this.trpc.procedure.use(authRequired).mutation(({ ctx }) => {
-        return this.noiseService.evaluateSenders(ctx.user.id);
-      }),
+      evaluate: this.trpc.procedure
+        .meta({
+          tags: ['Noise'],
+          summary: 'Evaluate sender profiles',
+        })
+        .use(authRequired)
+        .mutation(({ ctx }) => {
+          return this.noiseService.evaluateSenders(ctx.user.id);
+        }),
       block: this.trpc.procedure
+        .meta({
+          tags: ['Noise'],
+          summary: 'Create a block rule',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -65,6 +79,10 @@ export class NoiseRouterBuilder implements RouterBuilder {
           });
         }),
       unsubscribePlan: this.trpc.procedure
+        .meta({
+          tags: ['Noise'],
+          summary: 'Build unsubscribe plan',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -78,6 +96,10 @@ export class NoiseRouterBuilder implements RouterBuilder {
           return this.noiseService.buildUnsubscribePlan(ctx.user.id, ids);
         }),
       unsubscribeEvent: this.trpc.procedure
+        .meta({
+          tags: ['Noise'],
+          summary: 'Record unsubscribe event',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -94,10 +116,20 @@ export class NoiseRouterBuilder implements RouterBuilder {
             metadata: input.metadata ?? null,
           });
         }),
-      preferences: this.trpc.procedure.use(authRequired).query(({ ctx }) => {
-        return this.noiseService.getPreferences(ctx.user.id);
-      }),
+      preferences: this.trpc.procedure
+        .meta({
+          tags: ['Noise'],
+          summary: 'Get noise preferences',
+        })
+        .use(authRequired)
+        .query(({ ctx }) => {
+          return this.noiseService.getPreferences(ctx.user.id);
+        }),
       updatePreferences: this.trpc.procedure
+        .meta({
+          tags: ['Noise'],
+          summary: 'Update noise preferences',
+        })
         .use(authRequired)
         .input(
           z.object({

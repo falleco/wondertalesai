@@ -24,6 +24,10 @@ export const createAuthRouter = (
 ) => {
   return trpc.router({
     magicLink: trpc.procedure
+      .meta({
+        tags: ['Auth'],
+        summary: 'Send a magic link to the user',
+      })
       .input(MagicLinkInput)
       .mutation(async ({ input }) => {
         await jobsService.enqueueEmail({
@@ -33,11 +37,21 @@ export const createAuthRouter = (
         });
       }),
 
-    me: trpc.procedure.use(authRequired).query(({ ctx }) => {
-      return ctx.user;
-    }),
+    me: trpc.procedure
+      .meta({
+        tags: ['Auth'],
+        summary: 'Get the current user',
+      })
+      .use(authRequired)
+      .query(({ ctx }) => {
+        return ctx.user;
+      }),
 
     updateProfile: trpc.procedure
+      .meta({
+        tags: ['Auth'],
+        summary: 'Update the current user',
+      })
       .use(authRequired)
       .input(UpdateProfileInput)
       .mutation(async ({ ctx, input }) => {

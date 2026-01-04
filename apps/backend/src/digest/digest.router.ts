@@ -15,6 +15,10 @@ export class DigestRouterBuilder implements RouterBuilder {
   buildRouter() {
     return this.trpc.router({
       list: this.trpc.procedure
+        .meta({
+          tags: ['Digests'],
+          summary: 'List digests',
+        })
         .use(authRequired)
         .input(
           z
@@ -32,6 +36,10 @@ export class DigestRouterBuilder implements RouterBuilder {
           );
         }),
       detail: this.trpc.procedure
+        .meta({
+          tags: ['Digests'],
+          summary: 'Get digest details',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -42,6 +50,10 @@ export class DigestRouterBuilder implements RouterBuilder {
           return this.digestService.getDigest(ctx.user.id, input.id);
         }),
       run: this.trpc.procedure
+        .meta({
+          tags: ['Digests'],
+          summary: 'Run digest',
+        })
         .use(authRequired)
         .input(
           z
@@ -56,10 +68,20 @@ export class DigestRouterBuilder implements RouterBuilder {
             input?.type ?? 'daily',
           );
         }),
-      preferences: this.trpc.procedure.use(authRequired).query(({ ctx }) => {
-        return this.digestService.getDigestPreferences(ctx.user.id);
-      }),
+      preferences: this.trpc.procedure
+        .meta({
+          tags: ['Digests'],
+          summary: 'Get digest preferences',
+        })
+        .use(authRequired)
+        .query(({ ctx }) => {
+          return this.digestService.getDigestPreferences(ctx.user.id);
+        }),
       updatePreferences: this.trpc.procedure
+        .meta({
+          tags: ['Digests'],
+          summary: 'Update digest preferences',
+        })
         .use(authRequired)
         .input(
           z.object({

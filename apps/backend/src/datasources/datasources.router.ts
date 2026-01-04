@@ -14,10 +14,20 @@ export class DatasourcesRouterBuilder implements RouterBuilder {
 
   buildRouter() {
     return this.trpc.router({
-      list: this.trpc.procedure.use(authRequired).query(({ ctx }) => {
-        return this.datasourcesService.listConnections(ctx.user.id);
-      }),
+      list: this.trpc.procedure
+        .meta({
+          summary: 'List all connections',
+          tags: ['Datasources'],
+        })
+        .use(authRequired)
+        .query(({ ctx }) => {
+          return this.datasourcesService.listConnections(ctx.user.id);
+        }),
       emailInbox: this.trpc.procedure
+        .meta({
+          tags: ['Datasources'],
+          summary: 'List inbox messages',
+        })
         .use(authRequired)
         .input(
           z
@@ -31,6 +41,10 @@ export class DatasourcesRouterBuilder implements RouterBuilder {
           return this.datasourcesService.getEmailInbox(ctx.user.id, input);
         }),
       emailDetails: this.trpc.procedure
+        .meta({
+          tags: ['Datasources'],
+          summary: 'Get email details',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -44,11 +58,19 @@ export class DatasourcesRouterBuilder implements RouterBuilder {
           );
         }),
       dashboardSummary: this.trpc.procedure
+        .meta({
+          tags: ['Datasources'],
+          summary: 'Get dashboard summary',
+        })
         .use(authRequired)
         .query(({ ctx }) => {
           return this.datasourcesService.getDashboardSummary(ctx.user.id);
         }),
       remove: this.trpc.procedure
+        .meta({
+          tags: ['Datasources'],
+          summary: 'Remove a connection',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -62,6 +84,10 @@ export class DatasourcesRouterBuilder implements RouterBuilder {
           );
         }),
       forceReprocess: this.trpc.procedure
+        .meta({
+          tags: ['Datasources'],
+          summary: 'Reprocess a connection',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -75,6 +101,10 @@ export class DatasourcesRouterBuilder implements RouterBuilder {
           );
         }),
       gmailAuthUrl: this.trpc.procedure
+        .meta({
+          tags: ['Datasources'],
+          summary: 'Create Gmail auth URL',
+        })
         .use(authRequired)
         .input(
           z
@@ -92,6 +122,10 @@ export class DatasourcesRouterBuilder implements RouterBuilder {
           );
         }),
       fastmailConnect: this.trpc.procedure
+        .meta({
+          tags: ['Datasources'],
+          summary: 'Connect Fastmail account',
+        })
         .use(authRequired)
         .input(
           z

@@ -14,10 +14,20 @@ export class LlmRouterBuilder implements RouterBuilder {
 
   buildRouter() {
     return this.trpc.router({
-      list: this.trpc.procedure.use(authRequired).query(({ ctx }) => {
-        return this.llmService.listIntegrations(ctx.user.id);
-      }),
+      list: this.trpc.procedure
+        .meta({
+          tags: ['LLM'],
+          summary: 'List LLM integrations',
+        })
+        .use(authRequired)
+        .query(({ ctx }) => {
+          return this.llmService.listIntegrations(ctx.user.id);
+        }),
       create: this.trpc.procedure
+        .meta({
+          tags: ['LLM'],
+          summary: 'Create LLM integration',
+        })
         .use(authRequired)
         .input(
           z.object({
@@ -39,6 +49,10 @@ export class LlmRouterBuilder implements RouterBuilder {
           });
         }),
       remove: this.trpc.procedure
+        .meta({
+          tags: ['LLM'],
+          summary: 'Remove LLM integration',
+        })
         .use(authRequired)
         .input(
           z.object({

@@ -2,6 +2,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { generateOpenAPIDocumentFromTRPCRouter } from '@server/trpc/swagger';
 import helmet from 'helmet';
 import { version } from '../package.json';
 import { AppModule } from './app.module';
@@ -32,6 +33,10 @@ async function bootstrap() {
     });
   }
 
+  // TRPC
+  const trpc = app.get(TrpcRouter);
+  trpc.applyMiddleware(app);
+
   // Swagger Configuration
   const swaggerEnabled = cfg.get<boolean>('swagger.enabled') ?? false;
   if (swaggerEnabled) {
@@ -39,24 +44,23 @@ async function bootstrap() {
       .setTitle('Sophon Microservice Template API')
       .setDescription('API description')
       .setVersion(version)
-      .addApiKey(
-        {
-          type: 'apiKey',
-          in: 'header',
-          name: 'X-API-KEY',
-          description: 'Partner API key for authentication',
-        },
-        'partner_api_key',
-      )
       .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+    const doc = generateOpenAPIDocumentFromTRPCRouter(trpc.appRouter, {
+      pathPrefix: '/trpc',
+    });
+
+    for (const [path, operation] of Object.entries(doc.paths)) {
+      document.paths[path] = operation as {
+        summary?: string;
+        description?: string;
+        tags?: string[];
+      };
+    }
     SwaggerModule.setup(prefix, app, document);
   }
-
-  // TRPC
-  const trpc = app.get(TrpcRouter);
-  trpc.applyMiddleware(app);
 
   const port = cfg.get('port');
   const bind = cfg.get('bind');
