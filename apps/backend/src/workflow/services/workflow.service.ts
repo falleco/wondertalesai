@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { WorkflowRule } from './workflow-rule.entity';
+import { WorkflowRule } from '../entities/workflow-rule.entity';
 import {
   WorkflowTrigger,
   type WorkflowTriggerActionType,
   type WorkflowTriggerStatus,
-} from './workflow-trigger.entity';
+} from '../entities/workflow-trigger.entity';
 
 type WebhookActionConfig = {
   url: string;

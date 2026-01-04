@@ -2,6 +2,7 @@
 import { Checkbox } from "@web/components/ui/checkbox";
 import { Modal } from "@web/components/ui/modal/modal";
 import { trpc } from "@web/trpc/react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import SimpleBar from "simplebar-react";
 import EmailHeader from "./EmailHeader";
@@ -46,6 +47,10 @@ export default function EmailContent({
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(
     null,
   );
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const messageParam = searchParams.get("message");
 
   const emailDetailsQuery = trpc.datasources.emailDetails.useQuery(
     {
@@ -58,6 +63,12 @@ export default function EmailContent({
     setCheckedItems(new Array(emails.length).fill(false));
     setStarredItems(new Array(emails.length).fill(false));
   }, [emails.length]);
+
+  useEffect(() => {
+    if (messageParam && messageParam !== selectedMessageId) {
+      setSelectedMessageId(messageParam);
+    }
+  }, [messageParam, selectedMessageId]);
 
   const toggleCheck = (index: number, checked: boolean) => {
     const updated = [...checkedItems];
@@ -77,8 +88,25 @@ export default function EmailContent({
   const allChecked = checkedItems.every(Boolean);
   const selectedEmail = emailDetailsQuery.data;
 
+  const updateMessageParam = (messageId: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (messageId) {
+      params.set("message", messageId);
+    } else {
+      params.delete("message");
+    }
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname);
+  };
+
   const closeModal = () => {
     setSelectedMessageId(null);
+    updateMessageParam(null);
+  };
+
+  const handleSelectMessage = (messageId: string) => {
+    setSelectedMessageId(messageId);
+    updateMessageParam(messageId);
   };
 
   const formatDateTime = (value?: Date | string | null) => {
@@ -136,7 +164,7 @@ export default function EmailContent({
               <button
                 type="button"
                 aria-label={`Open email ${mail.subject ?? "details"}`}
-                onClick={() => setSelectedMessageId(mail.id)}
+                onClick={() => handleSelectMessage(mail.id)}
                 className="absolute inset-0 z-20"
               />
               <div className="relative z-10 flex cursor-pointer items-center px-4 py-4">

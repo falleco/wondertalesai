@@ -7,17 +7,17 @@ import { EmailParticipant } from '@server/datasources/email-participant.entity';
 import { EmailThread } from '@server/datasources/email-thread.entity';
 import { JobsModule } from '@server/jobs/jobs.module';
 import { TrpcModule } from '@server/trpc/trpc.module';
-import { WorkflowRule } from '@server/workflow/workflow-rule.entity';
-import { AttachmentAnalysis } from './attachment-analysis.entity';
-import { EmailAnalysis } from './email-analysis.entity';
+import { WorkflowRule } from '@server/workflow/entities/workflow-rule.entity';
+import { AttachmentAnalysis } from './entities/attachment-analysis.entity';
+import { EmailAnalysis } from './entities/email-analysis.entity';
 import { LlmRouterBuilder } from './llm.router';
-import { LlmService } from './llm.service';
-import { LlmIntegration } from './llm-integration.entity';
-import { LlmUsage } from './llm-usage.entity';
-import { OllamaService } from './ollama.service';
-import { OpenAiService } from './openai.service';
-import { PromptService } from './prompt.service';
-import { ThreadAnalysis } from './thread-analysis.entity';
+import { LlmService } from './services/llm.service';
+import { LlmIntegration } from './entities/llm-integration.entity';
+import { LlmUsage } from './entities/llm-usage.entity';
+import { OllamaService } from './services/ollama.service';
+import { OpenAiService } from './services/openai.service';
+import { PromptService } from './services/prompt.service';
+import { ThreadAnalysis } from './entities/thread-analysis.entity';
 
 @Module({
   imports: [

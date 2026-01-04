@@ -41,11 +41,44 @@ export class EmailMessage {
   @Column('boolean', { name: 'is_unread', default: true })
   isUnread!: boolean;
 
+  @Column('boolean', { name: 'is_archived', default: false })
+  isArchived!: boolean;
+
+  @Column('boolean', { name: 'is_noise', default: false })
+  isNoise!: boolean;
+
+  @Column('boolean', { name: 'is_blocked', default: false })
+  isBlocked!: boolean;
+
+  @Column('text', { name: 'block_rule_id', nullable: true })
+  blockRuleId!: string | null;
+
   @Column('boolean', { name: 'llm_processed', default: false })
   llmProcessed!: boolean;
 
   @Column('timestamptz', { name: 'llm_processed_at', nullable: true })
   llmProcessedAt!: Date | null;
+
+  @Column('text', { name: 'triage_category', nullable: true })
+  triageCategory!: string | null;
+
+  @Column('boolean', { name: 'triage_is_critical', default: false })
+  triageIsCritical!: boolean;
+
+  @Column('boolean', { name: 'triage_action_required', default: false })
+  triageActionRequired!: boolean;
+
+  @Column('text', { name: 'triage_summary', nullable: true })
+  triageSummary!: string | null;
+
+  @Column('jsonb', { name: 'triage_action_items', nullable: true })
+  triageActionItems!: Array<{ task: string; dueDate?: string | null }> | null;
+
+  @Column('double precision', { name: 'triage_confidence', default: 0 })
+  triageConfidence!: number;
+
+  @Column('timestamptz', { name: 'triage_evaluated_at', nullable: true })
+  triageEvaluatedAt!: Date | null;
 
   @Column('jsonb', { name: 'metadata', nullable: true })
   metadata!: Record<string, unknown> | null;

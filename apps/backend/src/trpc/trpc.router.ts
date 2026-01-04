@@ -5,7 +5,7 @@ import { ContactsRouterBuilder } from '@server/contacts/contacts.router';
 import { DatasourcesRouterBuilder } from '@server/datasources/datasources.router';
 import { LlmRouterBuilder } from '@server/llm/llm.router';
 import { TrpcService } from '@server/trpc/trpc.service';
-import { WorkflowRouterBuilder } from '@server/workflow/workflow.router';
+import { WorkflowRouterBuilder } from '@server/workflow/routers/workflow.router';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import { PrincipalService } from '../auth/principal.service';
 // import { AuthRouterBuilder } from '@server/auth/auth.router';

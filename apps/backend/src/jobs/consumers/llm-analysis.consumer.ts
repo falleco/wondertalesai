@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
-import { LlmService } from '@server/llm/llm.service';
+import { LlmService } from '@server/llm/services/llm.service';
 import { Job } from 'bullmq';
 import { LlmAnalysisPayload, Queues } from '../queues';
 

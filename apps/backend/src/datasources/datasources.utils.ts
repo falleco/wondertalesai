@@ -59,3 +59,66 @@ export const buildContactEntries = (
 
   return Array.from(byEmail.values());
 };
+
+const URL_REGEX = /\bhttps?:\/\/[^\s<>"')]+/gi;
+const MAILTO_REGEX = /\bmailto:[^\s<>"')]+/gi;
+
+const parseListUnsubscribeLinks = (value?: string | null) => {
+  if (!value) {
+    return [];
+  }
+  const candidates: string[] = [];
+  const matches = value.match(/<([^>]+)>/g);
+  if (matches && matches.length > 0) {
+    for (const match of matches) {
+      candidates.push(match.replace(/[<>]/g, '').trim());
+    }
+  } else {
+    candidates.push(
+      ...value
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean),
+    );
+  }
+  return candidates.filter(
+    (link) =>
+      link.startsWith('http://') ||
+      link.startsWith('https://') ||
+      link.startsWith('mailto:'),
+  );
+};
+
+export const extractUnsubscribeLinks = (input: {
+  text?: string | null;
+  html?: string | null;
+  snippet?: string | null;
+  listUnsubscribe?: string | null;
+}) => {
+  const links = new Set<string>();
+
+  const listUnsubscribeLinks = parseListUnsubscribeLinks(input.listUnsubscribe);
+  for (const link of listUnsubscribeLinks) {
+    links.add(link);
+  }
+
+  const sources = [input.text, input.html, input.snippet]
+    .filter(Boolean)
+    .join(' ');
+
+  const urls = sources.match(URL_REGEX) ?? [];
+  for (const url of urls) {
+    if (url.toLowerCase().includes('unsubscribe')) {
+      links.add(url);
+    }
+  }
+
+  const mailtos = sources.match(MAILTO_REGEX) ?? [];
+  for (const mailto of mailtos) {
+    if (mailto.toLowerCase().includes('unsubscribe')) {
+      links.add(mailto);
+    }
+  }
+
+  return Array.from(links);
+};

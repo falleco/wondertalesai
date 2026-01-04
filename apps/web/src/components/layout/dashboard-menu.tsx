@@ -14,7 +14,6 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
         role="img"
         aria-label="Dashboard"
       >
-        <title>Dashboard</title>
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -37,7 +36,6 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
         role="img"
         aria-label="Emails"
       >
-        <title>Emails</title>
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -60,11 +58,54 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
         role="img"
         aria-label="Contacts"
       >
-        <title>Contacts</title>
         <path
           fillRule="evenodd"
           clipRule="evenodd"
           d="M8.7526 6.7963C8.7526 5.3555 9.9206 4.1875 11.3614 4.1875C12.8022 4.1875 13.9702 5.3555 13.9702 6.7963C13.9702 8.2371 12.8022 9.4051 11.3614 9.4051C9.9206 9.4051 8.7526 8.2371 8.7526 6.7963ZM11.3614 2.6875C9.09217 2.6875 7.2526 4.52707 7.2526 6.7963C7.2526 9.06553 9.09217 10.9051 11.3614 10.9051C13.6306 10.9051 15.4702 9.06553 15.4702 6.7963C15.4702 4.52707 13.6306 2.6875 11.3614 2.6875ZM9.8148 12.208C6.38467 12.208 3.604 14.9887 3.604 18.4188V18.7367C3.604 19.1509 3.93979 19.4867 4.354 19.4867C4.76822 19.4867 5.104 19.1509 5.104 18.7367V18.4188C5.104 15.8171 7.2131 13.708 9.8148 13.708H12.9092C15.511 13.708 17.6201 15.8171 17.6201 18.4188V18.7367C17.6201 19.1509 17.9558 19.4867 18.3701 19.4867C18.7843 19.4867 19.1201 19.1509 19.1201 18.7367V18.4188C19.1201 14.9887 16.3394 12.208 12.9092 12.208H9.8148Z"
+          fill="currentColor"
+        />
+      </svg>
+    ),
+  },
+  {
+    href: "/noise",
+    label: "Noise reduction",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="22"
+        height="22"
+        viewBox="0 0 22 22"
+        fill="none"
+        role="img"
+        aria-label="Noise reduction"
+      >
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M3.5 6.5C3.5 6.08579 3.83579 5.75 4.25 5.75H17.75C18.1642 5.75 18.5 6.08579 18.5 6.5C18.5 6.91421 18.1642 7.25 17.75 7.25H4.25C3.83579 7.25 3.5 6.91421 3.5 6.5ZM5.5 11C5.5 10.5858 5.83579 10.25 6.25 10.25H15.75C16.1642 10.25 16.5 10.5858 16.5 11C16.5 11.4142 16.1642 11.75 15.75 11.75H6.25C5.83579 11.75 5.5 11.4142 5.5 11ZM7.5 15.5C7.5 15.0858 7.83579 14.75 8.25 14.75H13.75C14.1642 14.75 14.5 15.0858 14.5 15.5C14.5 15.9142 14.1642 16.25 13.75 16.25H8.25C7.83579 16.25 7.5 15.9142 7.5 15.5Z"
+          fill="currentColor"
+        />
+      </svg>
+    ),
+  },
+  {
+    href: "/digests",
+    label: "Digests",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="22"
+        height="22"
+        viewBox="0 0 22 22"
+        fill="none"
+        role="img"
+        aria-label="Digests"
+      >
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M4.5 4.5C4.5 3.67157 5.17157 3 6 3H16C16.8284 3 17.5 3.67157 17.5 4.5V17.5C17.5 18.3284 16.8284 19 16 19H6C5.17157 19 4.5 18.3284 4.5 17.5V4.5ZM6 4.5H16V17.5H6V4.5ZM7.5 8C7.5 7.58579 7.83579 7.25 8.25 7.25H13.75C14.1642 7.25 14.5 7.58579 14.5 8C14.5 8.41421 14.1642 8.75 13.75 8.75H8.25C7.83579 8.75 7.5 8.41421 7.5 8ZM7.5 12C7.5 11.5858 7.83579 11.25 8.25 11.25H12.5C12.9142 11.25 13.25 11.5858 13.25 12C13.25 12.4142 12.9142 12.75 12.5 12.75H8.25C7.83579 12.75 7.5 12.4142 7.5 12ZM7.5 15.5C7.5 15.0858 7.83579 14.75 8.25 14.75H11.5C11.9142 14.75 12.25 15.0858 12.25 15.5C12.25 15.9142 11.9142 16.25 11.5 16.25H8.25C7.83579 16.25 7.5 15.9142 7.5 15.5Z"
           fill="currentColor"
         />
       </svg>
@@ -83,7 +124,6 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
         role="img"
         aria-label="Integrations"
       >
-        <title>Integrations</title>
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -106,7 +146,6 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
         role="img"
         aria-label="Workflow"
       >
-        <title>Workflow</title>
         <path
           fillRule="evenodd"
           clipRule="evenodd"

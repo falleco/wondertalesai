@@ -3,7 +3,7 @@ import { RouterBuilder } from '@server/trpc/trpc.interface';
 import { authRequired } from '@server/trpc/trpc.middleware';
 import { TrpcService } from '@server/trpc/trpc.service';
 import { z } from 'zod';
-import { LlmService } from './llm.service';
+import { LlmService } from './services/llm.service';
 
 @Injectable()
 export class LlmRouterBuilder implements RouterBuilder {

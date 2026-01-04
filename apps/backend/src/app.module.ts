@@ -8,8 +8,10 @@ import { GetAppConfiguration } from './config/configuration';
 import { TypeOrmConfigFactory } from './config/orm.configuration';
 import { ContactsModule } from './contacts/contacts.module';
 import { DatasourcesModule } from './datasources/datasources.module';
+import { DigestModule } from './digest/digest.module';
 import { HealthModule } from './health/health.module';
 import { JobsModule } from './jobs/jobs.module';
+import { NoiseModule } from './noise/noise.module';
 import { RedisModule } from './redis/redis.module';
 import { TrpcModule } from './trpc/trpc.module';
 import { WorkflowModule } from './workflow/workflow.module';
@@ -35,6 +37,8 @@ import { WorkflowModule } from './workflow/workflow.module';
     JobsModule,
     ContactsModule,
     DatasourcesModule,
+    DigestModule,
+    NoiseModule,
     WorkflowModule,
   ],
   controllers: [],

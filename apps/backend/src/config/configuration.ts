@@ -48,6 +48,9 @@ export const GetAppConfiguration = async () => {
     port: config.PORT ? Number.parseInt(config.PORT, 10) : 4001,
     bind: config.BIND_ADDR || '0.0.0.0',
     pathPrefix: config.PATH_PREFIX || '',
+    app: {
+      baseUrl: config.APP_BASE_URL || '',
+    },
     swagger: {
       enabled: config.FEATURE_SWAGGER_ENABLED === 'true',
     },
@@ -75,6 +78,9 @@ export const GetAppConfiguration = async () => {
       fromName: config.SENDGRID_FROM_NAME,
       templates: {
         magicLink: config.SENDGRID_MAGIC_LINK_TEMPLATE_ID,
+        weeklyCleanupDigest: config.SENDGRID_WEEKLY_DIGEST_TEMPLATE_ID,
+        dailyDigest: config.SENDGRID_DIGEST_DAILY_TEMPLATE_ID,
+        weeklyDigest: config.SENDGRID_DIGEST_WEEKLY_TEMPLATE_ID,
       },
     },
     integrations: {

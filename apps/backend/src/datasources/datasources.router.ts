@@ -43,6 +43,11 @@ export class DatasourcesRouterBuilder implements RouterBuilder {
             input.messageId,
           );
         }),
+      dashboardSummary: this.trpc.procedure
+        .use(authRequired)
+        .query(({ ctx }) => {
+          return this.datasourcesService.getDashboardSummary(ctx.user.id);
+        }),
       remove: this.trpc.procedure
         .use(authRequired)
         .input(

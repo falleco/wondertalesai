@@ -3,7 +3,7 @@ import { RouterBuilder } from '@server/trpc/trpc.interface';
 import { authRequired } from '@server/trpc/trpc.middleware';
 import { TrpcService } from '@server/trpc/trpc.service';
 import { z } from 'zod';
-import { WorkflowService } from './workflow.service';
+import { WorkflowService } from '../services/workflow.service';
 
 @Injectable()
 export class WorkflowRouterBuilder implements RouterBuilder {

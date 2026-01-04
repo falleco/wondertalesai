@@ -3,6 +3,8 @@ export enum Queues {
   EMAIL = 'email',
   GMAIL_SYNC = 'gmail-sync',
   JMAP_SYNC = 'jmap-sync',
+  WEEKLY_DIGEST = 'weekly-digest',
+  DIGEST_RUN = 'digest-run',
   LLM_ANALYSIS = 'llm-analysis',
 }
 
@@ -33,4 +35,12 @@ export type LlmAnalysisPayload = {
   messageId?: string;
   threadId?: string;
   attachmentId?: string;
+};
+
+export type WeeklyDigestPayload = {
+  runAt?: string;
+};
+
+export type DigestRunPayload = {
+  runAt?: string;
 };

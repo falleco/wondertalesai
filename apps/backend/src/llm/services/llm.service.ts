@@ -8,21 +8,35 @@ import { EmailThread } from '@server/datasources/email-thread.entity';
 import { JobsService } from '@server/jobs/jobs.service';
 import { type LlmAnalysisPayload } from '@server/jobs/queues';
 import { Repository } from 'typeorm';
-import { AttachmentAnalysis } from './attachment-analysis.entity';
-import { EmailAnalysis } from './email-analysis.entity';
-import { LlmIntegration, type LlmProvider } from './llm-integration.entity';
-import { LlmUsage } from './llm-usage.entity';
+import { AttachmentAnalysis } from '../entities/attachment-analysis.entity';
+import { EmailAnalysis } from '../entities/email-analysis.entity';
+import { LlmIntegration, type LlmProvider } from '../entities/llm-integration.entity';
+import { LlmUsage } from '../entities/llm-usage.entity';
 import { OllamaService } from './ollama.service';
 import { OpenAiService } from './openai.service';
 import { PromptService } from './prompt.service';
-import { ThreadAnalysis } from './thread-analysis.entity';
+import { ThreadAnalysis } from '../entities/thread-analysis.entity';
 
 const MAX_LLM_INPUT_CHARS = 8000;
 const SYSTEM_PROMPT =
   'You are an assistant that extracts structured insights from emails. ' +
   'Return ONLY valid JSON with keys: summary, tags, keywords, actions. ' +
-  'summary: string or null. tags: array of strings. keywords: array of strings. ' +
+  'summary: string or null. tags: array of strings (lowercase slug, use "-" instead of spaces). keywords: array of strings. ' +
   'actions: array of objects with fields { title, dueDate?, confidence?, category? }.';
+const MARKETING_CLASSIFIER_PROMPT =
+  'You are a classifier that detects marketing content. ' +
+  'Return ONLY valid JSON with keys: isMarketing, isDisguisedMarketing, marketingType, confidence, rationale. ' +
+  'marketingType must be one of: newsletter, promo, outreach, update, transactional, other. ' +
+  'confidence must be between 0 and 1. rationale max 200 characters.';
+const DIGEST_TRIAGE_PROMPT =
+  'You are a triage assistant for daily/weekly digests. ' +
+  'Return ONLY JSON with keys: category, isCritical, actionRequired, actionItems, summary, confidence, rationale. ' +
+  'category must be one of: work, finance, personal, receipts, newsletters, promotions, social, other. ' +
+  'summary max 240 chars. actionItems max 3, each task max 120 chars. confidence 0..1. rationale max 200 chars.';
+const DIGEST_THREAD_PROMPT =
+  'You summarize email threads for a digest. ' +
+  'Return ONLY JSON with keys: threadSummary, keyDecisions, openQuestions, actionItems, confidence. ' +
+  'threadSummary max 300 chars, keyDecisions max 3, openQuestions max 3, actionItems max 3.';
 
 type LlmActionItem = {
   title: string;
@@ -50,6 +64,49 @@ type LlmUsageMetrics = {
 type LlmProviderResponse = {
   content: string;
   usage: LlmUsageMetrics;
+};
+
+type MarketingClassifierResult = {
+  isMarketing: boolean;
+  isDisguisedMarketing: boolean;
+  marketingType:
+    | 'newsletter'
+    | 'promo'
+    | 'outreach'
+    | 'update'
+    | 'transactional'
+    | 'other';
+  confidence: number;
+  rationale: string;
+};
+
+type DigestTriageResult = {
+  category: string;
+  isCritical: boolean;
+  actionRequired: boolean;
+  actionItems: Array<{ task: string; dueDate?: string | null }>;
+  summary: string;
+  confidence: number;
+  rationale: string;
+};
+
+type DigestThreadResult = {
+  threadSummary: string;
+  keyDecisions: string[];
+  openQuestions: string[];
+  actionItems: Array<{ task: string; dueDate?: string | null }>;
+  confidence: number;
+};
+
+const clampConfidence = (value: number) => Math.min(1, Math.max(0, value));
+
+const slugifyTag = (value: string) => {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
+  return normalized.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 };
 
 @Injectable()
@@ -548,6 +605,166 @@ export class LlmService {
     };
   }
 
+  async classifyMarketing(input: {
+    userId: string;
+    fromName: string | null;
+    fromEmail: string | null;
+    subject: string | null;
+    snippet: string | null;
+    listUnsubscribe: string | null;
+    recentSubjects: string[];
+  }): Promise<MarketingClassifierResult | null> {
+    const integration = await this.getDefaultLlmIntegration(input.userId);
+    if (!integration) {
+      return null;
+    }
+
+    const prompt = this.promptService.buildMarketingClassifierPrompt({
+      fromName: input.fromName,
+      fromEmail: input.fromEmail,
+      subject: input.subject,
+      snippet: input.snippet,
+      listUnsubscribe: input.listUnsubscribe,
+      recentSubjects: input.recentSubjects,
+    });
+
+    const trimmedPrompt = prompt.slice(0, MAX_LLM_INPUT_CHARS);
+
+    try {
+      let providerResponse: LlmProviderResponse;
+      if (integration.provider === 'openai') {
+        if (!integration.apiKey) {
+          throw new Error('OpenAI API key missing');
+        }
+        providerResponse = await this.openAiService.request({
+          apiKey: integration.apiKey,
+          baseUrl: integration.baseUrl,
+          model: integration.model,
+          systemPrompt: MARKETING_CLASSIFIER_PROMPT,
+          prompt: trimmedPrompt,
+        });
+      } else {
+        providerResponse = await this.ollamaService.request({
+          baseUrl: integration.baseUrl,
+          model: integration.model,
+          systemPrompt: MARKETING_CLASSIFIER_PROMPT,
+          prompt: trimmedPrompt,
+        });
+      }
+
+      return this.parseMarketingClassifierResponse(providerResponse.content);
+    } catch (error) {
+      this.logger.error(error);
+      return null;
+    }
+  }
+
+  async triageDigestMessage(input: {
+    userId: string;
+    fromName: string | null;
+    fromEmail: string | null;
+    subject: string | null;
+    sentAt: string | null;
+    snippet: string | null;
+    threadSubject: string | null;
+    previousMessages: Array<{
+      subject: string;
+      snippet: string;
+      sentAt: string | null;
+    }>;
+  }): Promise<DigestTriageResult | null> {
+    const integration = await this.getDefaultLlmIntegration(input.userId);
+    if (!integration) {
+      return null;
+    }
+
+    const prompt = this.promptService.buildDigestTriagePrompt({
+      fromName: input.fromName,
+      fromEmail: input.fromEmail,
+      subject: input.subject,
+      sentAt: input.sentAt,
+      snippet: input.snippet,
+      threadSubject: input.threadSubject,
+      previousMessages: input.previousMessages,
+    });
+
+    try {
+      let providerResponse: LlmProviderResponse;
+      if (integration.provider === 'openai') {
+        if (!integration.apiKey) {
+          throw new Error('OpenAI API key missing');
+        }
+        providerResponse = await this.openAiService.request({
+          apiKey: integration.apiKey,
+          baseUrl: integration.baseUrl,
+          model: integration.model,
+          systemPrompt: DIGEST_TRIAGE_PROMPT,
+          prompt,
+        });
+      } else {
+        providerResponse = await this.ollamaService.request({
+          baseUrl: integration.baseUrl,
+          model: integration.model,
+          systemPrompt: DIGEST_TRIAGE_PROMPT,
+          prompt,
+        });
+      }
+
+      return this.parseDigestTriageResponse(providerResponse.content);
+    } catch (error) {
+      this.logger.error(error);
+      return null;
+    }
+  }
+
+  async summarizeDigestThread(input: {
+    userId: string;
+    threadSubject: string | null;
+    participants: string[];
+    timeline: Array<{ from: string; sentAt: string | null; snippet: string }>;
+    messageSummaries: string[];
+  }): Promise<DigestThreadResult | null> {
+    const integration = await this.getDefaultLlmIntegration(input.userId);
+    if (!integration) {
+      return null;
+    }
+
+    const prompt = this.promptService.buildDigestThreadPrompt({
+      threadSubject: input.threadSubject,
+      participants: input.participants,
+      timeline: input.timeline,
+      messageSummaries: input.messageSummaries,
+    });
+
+    try {
+      let providerResponse: LlmProviderResponse;
+      if (integration.provider === 'openai') {
+        if (!integration.apiKey) {
+          throw new Error('OpenAI API key missing');
+        }
+        providerResponse = await this.openAiService.request({
+          apiKey: integration.apiKey,
+          baseUrl: integration.baseUrl,
+          model: integration.model,
+          systemPrompt: DIGEST_THREAD_PROMPT,
+          prompt,
+        });
+      } else {
+        providerResponse = await this.ollamaService.request({
+          baseUrl: integration.baseUrl,
+          model: integration.model,
+          systemPrompt: DIGEST_THREAD_PROMPT,
+          prompt,
+        });
+      }
+
+      return this.parseDigestThreadResponse(providerResponse.content);
+    } catch (error) {
+      this.logger.error(error);
+      return null;
+    }
+  }
+
   private parseLlmResponse(content: string): LlmAnalysisResult {
     let jsonText = content.trim();
     if (!jsonText.startsWith('{')) {
@@ -568,7 +785,14 @@ export class LlmService {
     return {
       summary: typeof parsed.summary === 'string' ? parsed.summary : null,
       tags: Array.isArray(parsed.tags)
-        ? parsed.tags.filter((tag) => typeof tag === 'string')
+        ? Array.from(
+            new Set(
+              parsed.tags
+                .filter((tag) => typeof tag === 'string')
+                .map((tag) => slugifyTag(tag))
+                .filter(Boolean),
+            ),
+          )
         : [],
       keywords: Array.isArray(parsed.keywords)
         ? parsed.keywords.filter((keyword) => typeof keyword === 'string')
@@ -577,6 +801,181 @@ export class LlmService {
         ? parsed.actions.filter((action) => typeof action === 'object')
         : [],
       raw: parsed,
+    };
+  }
+
+  private parseMarketingClassifierResponse(
+    content: string,
+  ): MarketingClassifierResult {
+    let jsonText = content.trim();
+    if (!jsonText.startsWith('{')) {
+      const start = jsonText.indexOf('{');
+      const end = jsonText.lastIndexOf('}');
+      if (start >= 0 && end >= 0) {
+        jsonText = jsonText.slice(start, end + 1);
+      }
+    }
+
+    let parsed: Record<string, unknown> = {};
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch (_error) {
+      parsed = {};
+    }
+
+    const marketingType =
+      typeof parsed.marketingType === 'string'
+        ? parsed.marketingType.toLowerCase()
+        : 'other';
+
+    const allowedTypes = new Set([
+      'newsletter',
+      'promo',
+      'outreach',
+      'update',
+      'transactional',
+      'other',
+    ]);
+
+    return {
+      isMarketing: Boolean(parsed.isMarketing),
+      isDisguisedMarketing: Boolean(parsed.isDisguisedMarketing),
+      marketingType: allowedTypes.has(marketingType)
+        ? (marketingType as MarketingClassifierResult['marketingType'])
+        : 'other',
+      confidence:
+        typeof parsed.confidence === 'number'
+          ? clampConfidence(parsed.confidence)
+          : 0,
+      rationale:
+        typeof parsed.rationale === 'string'
+          ? parsed.rationale.slice(0, 200)
+          : '',
+    };
+  }
+
+  private parseDigestTriageResponse(content: string): DigestTriageResult {
+    let jsonText = content.trim();
+    if (!jsonText.startsWith('{')) {
+      const start = jsonText.indexOf('{');
+      const end = jsonText.lastIndexOf('}');
+      if (start >= 0 && end >= 0) {
+        jsonText = jsonText.slice(start, end + 1);
+      }
+    }
+
+    let parsed: Record<string, unknown> = {};
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch (_error) {
+      parsed = {};
+    }
+
+    const category =
+      typeof parsed.category === 'string'
+        ? parsed.category.toLowerCase()
+        : 'other';
+    const allowedCategories = new Set([
+      'work',
+      'finance',
+      'personal',
+      'receipts',
+      'newsletters',
+      'promotions',
+      'social',
+      'other',
+    ]);
+    const safeCategory = allowedCategories.has(category) ? category : 'other';
+
+    const actionItems = Array.isArray(parsed.actionItems)
+      ? parsed.actionItems
+          .filter((item) => typeof item === 'object' && item !== null)
+          .map((item) => {
+            const record = item as Record<string, unknown>;
+            const task =
+              typeof record.task === 'string' ? record.task.slice(0, 120) : '';
+            const dueDate =
+              typeof record.dueDate === 'string' ? record.dueDate : null;
+            return task ? { task, dueDate } : null;
+          })
+          .filter((item): item is { task: string; dueDate: string | null } =>
+            Boolean(item),
+          )
+          .slice(0, 3)
+      : [];
+
+    return {
+      category: safeCategory,
+      isCritical: Boolean(parsed.isCritical),
+      actionRequired: Boolean(parsed.actionRequired),
+      actionItems,
+      summary:
+        typeof parsed.summary === 'string' ? parsed.summary.slice(0, 240) : '',
+      confidence:
+        typeof parsed.confidence === 'number'
+          ? clampConfidence(parsed.confidence)
+          : 0,
+      rationale:
+        typeof parsed.rationale === 'string'
+          ? parsed.rationale.slice(0, 200)
+          : '',
+    };
+  }
+
+  private parseDigestThreadResponse(content: string): DigestThreadResult {
+    let jsonText = content.trim();
+    if (!jsonText.startsWith('{')) {
+      const start = jsonText.indexOf('{');
+      const end = jsonText.lastIndexOf('}');
+      if (start >= 0 && end >= 0) {
+        jsonText = jsonText.slice(start, end + 1);
+      }
+    }
+
+    let parsed: Record<string, unknown> = {};
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch (_error) {
+      parsed = {};
+    }
+
+    const normalizeList = (value: unknown) =>
+      Array.isArray(value)
+        ? value
+            .filter((entry) => typeof entry === 'string')
+            .map((entry) => entry.slice(0, 120))
+            .slice(0, 3)
+        : [];
+
+    const actionItems = Array.isArray(parsed.actionItems)
+      ? parsed.actionItems
+          .filter((item) => typeof item === 'object' && item !== null)
+          .map((item) => {
+            const record = item as Record<string, unknown>;
+            const task =
+              typeof record.task === 'string' ? record.task.slice(0, 120) : '';
+            const dueDate =
+              typeof record.dueDate === 'string' ? record.dueDate : null;
+            return task ? { task, dueDate } : null;
+          })
+          .filter((item): item is { task: string; dueDate: string | null } =>
+            Boolean(item),
+          )
+          .slice(0, 3)
+      : [];
+
+    return {
+      threadSummary:
+        typeof parsed.threadSummary === 'string'
+          ? parsed.threadSummary.slice(0, 300)
+          : '',
+      keyDecisions: normalizeList(parsed.keyDecisions),
+      openQuestions: normalizeList(parsed.openQuestions),
+      actionItems,
+      confidence:
+        typeof parsed.confidence === 'number'
+          ? clampConfidence(parsed.confidence)
+          : 0,
     };
   }
 

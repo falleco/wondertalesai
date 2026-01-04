@@ -5,11 +5,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type AppConfigurationType } from '@server/config/configuration';
 import { ContactsService } from '@server/contacts/contacts.service';
 import { JobsService } from '@server/jobs/jobs.service';
+import { NoiseService } from '@server/noise/services/noise.service';
 import { In, Repository } from 'typeorm';
 import { DatasourceConnection } from './datasource-connection.entity';
 import { DatasourceOauthState } from './datasource-oauth-state.entity';
 import {
   buildContactEntries,
+  extractUnsubscribeLinks,
   getSyncStartAt,
   type ParsedAddress,
   parseSyncStartAt,
@@ -253,6 +255,7 @@ export class GmailService {
     private readonly configService: ConfigService<AppConfigurationType>,
     private readonly jobsService: JobsService,
     private readonly contactsService: ContactsService,
+    private readonly noiseService: NoiseService,
   ) {}
 
   async createGmailAuthUrl(
@@ -849,6 +852,7 @@ export class GmailService {
     const cc = parseAddressList(getHeaderValue(headers, 'Cc'));
     const bcc = parseAddressList(getHeaderValue(headers, 'Bcc'));
     const replyTo = parseAddressList(getHeaderValue(headers, 'Reply-To'));
+    const listUnsubscribe = getHeaderValue(headers, 'List-Unsubscribe') ?? null;
     const messageSentAt = message.internalDate
       ? new Date(Number(message.internalDate))
       : null;
@@ -868,6 +872,12 @@ export class GmailService {
     const content = hasReadonlyScope
       ? buildExtractedContent(payload)
       : { textBody: null, htmlBody: null, attachments: [] };
+    const unsubscribeLinks = extractUnsubscribeLinks({
+      text: content.textBody,
+      html: content.htmlBody,
+      snippet: message.snippet,
+      listUnsubscribe,
+    });
 
     await this.messageRepository.manager.transaction(async (manager) => {
       const threadRepository = manager.getRepository(EmailThread);
@@ -924,11 +934,17 @@ export class GmailService {
       storedMessage.metadata = {
         ...(storedMessage.metadata ?? {}),
         labelIds: message.labelIds ?? [],
+        listUnsubscribe,
+        unsubscribeLinks,
       };
 
       storedMessage = await messageRepository.save(storedMessage);
+      if (!storedMessage) {
+        return;
+      }
+      let savedMessage = storedMessage;
 
-      await participantRepository.delete({ messageId: storedMessage.id });
+      await participantRepository.delete({ messageId: savedMessage.id });
 
       const participants = [
         ...from.map((entry) => ({ ...entry, role: 'from' as const })),
@@ -938,7 +954,7 @@ export class GmailService {
         ...replyTo.map((entry) => ({ ...entry, role: 'reply-to' as const })),
       ].map((entry) =>
         participantRepository.create({
-          messageId: storedMessage.id,
+          messageId: savedMessage.id,
           email: entry.email,
           name: entry.name,
           role: entry.role,
@@ -949,7 +965,29 @@ export class GmailService {
         await participantRepository.save(participants);
       }
 
-      await messageLabelRepository.delete({ messageId: storedMessage.id });
+      const sender = from[0] ?? null;
+      if (sender) {
+        const matchedRule = await this.noiseService.matchBlockRuleForMessage({
+          userId: connection.userId,
+          senderEmail: sender.email,
+          senderDomain: sender.email.split('@')[1] ?? null,
+          senderName: sender.name,
+          subject,
+        });
+        if (matchedRule) {
+          savedMessage.isBlocked = true;
+          savedMessage.blockRuleId = matchedRule.id;
+          savedMessage.isArchived = matchedRule.action === 'archive';
+          savedMessage.isNoise = matchedRule.action === 'moveToNoise';
+          savedMessage.metadata = {
+            ...(savedMessage.metadata ?? {}),
+            blockRuleAction: matchedRule.action,
+          };
+          savedMessage = await messageRepository.save(savedMessage);
+        }
+      }
+
+      await messageLabelRepository.delete({ messageId: savedMessage.id });
 
       const labelIds = message.labelIds ?? [];
       if (labelIds.length > 0) {
@@ -969,7 +1007,7 @@ export class GmailService {
           .filter((label): label is EmailLabel => Boolean(label))
           .map((label) =>
             messageLabelRepository.create({
-              messageId: storedMessage.id,
+              messageId: savedMessage.id,
               labelId: label.id,
             }),
           );
@@ -980,11 +1018,11 @@ export class GmailService {
       }
 
       const existingAttachments = await attachmentRepository.find({
-        where: { messageId: storedMessage.id },
+        where: { messageId: savedMessage.id },
       });
 
       if (existingAttachments.length > 0) {
-        await attachmentRepository.delete({ messageId: storedMessage.id });
+        await attachmentRepository.delete({ messageId: savedMessage.id });
       }
 
       let savedAttachments: EmailAttachment[] = [];
@@ -993,7 +1031,7 @@ export class GmailService {
           accessToken,
           message,
           content.attachments,
-          storedMessage.id,
+          savedMessage.id,
         );
 
         if (attachments.length > 0) {
@@ -1018,11 +1056,11 @@ export class GmailService {
       thread.messageCount = messageCount;
       await threadRepository.save(thread);
 
-      if (!storedMessage.llmProcessed) {
+      if (!savedMessage.llmProcessed) {
         await this.jobsService.enqueueLlmAnalysis({
           type: 'email',
           userId: connection.userId,
-          messageId: storedMessage.id,
+          messageId: savedMessage.id,
           threadId: thread.id,
         });
       }

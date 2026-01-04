@@ -1,10 +1,10 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TrpcModule } from '@server/trpc/trpc.module';
-import { WorkflowRouterBuilder } from './workflow.router';
-import { WorkflowService } from './workflow.service';
-import { WorkflowRule } from './workflow-rule.entity';
-import { WorkflowTrigger } from './workflow-trigger.entity';
+import { WorkflowRouterBuilder } from './routers/workflow.router';
+import { WorkflowRule } from './entities/workflow-rule.entity';
+import { WorkflowTrigger } from './entities/workflow-trigger.entity';
+import { WorkflowService } from './services/workflow.service';
 
 @Module({
   imports: [

@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JobsService } from '@server/jobs/jobs.service';
-import { EmailAnalysis } from '@server/llm/email-analysis.entity';
-import { ThreadAnalysis } from '@server/llm/thread-analysis.entity';
+import { EmailAnalysis } from '@server/llm/entities/email-analysis.entity';
+import { ThreadAnalysis } from '@server/llm/entities/thread-analysis.entity';
+import { SenderProfile } from '@server/noise/entities/sender-profile.entity';
+import { WorkflowRule } from '@server/workflow/entities/workflow-rule.entity';
 import { In, Repository } from 'typeorm';
 import { DatasourceConnection } from './datasource-connection.entity';
 import { EmailAttachment } from './email-attachment.entity';
@@ -35,10 +37,558 @@ export class DatasourcesService {
     private readonly emailAnalysisRepository: Repository<EmailAnalysis>,
     @InjectRepository(ThreadAnalysis)
     private readonly threadAnalysisRepository: Repository<ThreadAnalysis>,
+    @InjectRepository(SenderProfile)
+    private readonly senderProfileRepository: Repository<SenderProfile>,
+    @InjectRepository(WorkflowRule)
+    private readonly workflowRuleRepository: Repository<WorkflowRule>,
     private readonly jobsService: JobsService,
     private readonly gmailService: GmailService,
     private readonly jmapService: JmapService,
   ) {}
+
+  async getDashboardSummary(userId: string) {
+    const connections = await this.connectionRepository.find({
+      where: { userId },
+      select: {
+        id: true,
+        providerEmail: true,
+      },
+    });
+
+    const connectionIds = connections.map((connection) => connection.id);
+    const userEmails = connections
+      .map((connection) => connection.providerEmail)
+      .filter((email): email is string => Boolean(email))
+      .map((email) => email.toLowerCase());
+
+    const totalConnections = connectionIds.length;
+    const totalEmails = totalConnections
+      ? await this.messageRepository.count({
+          where: { connectionId: In(connectionIds) },
+        })
+      : 0;
+
+    if (connectionIds.length === 0) {
+      return {
+        stats: { totalConnections, totalEmails },
+        inboxHealth: this.buildInboxHealthSummary({
+          loadCount: 0,
+          importantShare: 0,
+          noiseShare: 0,
+          avgResponseHours: null,
+          automationsCount: 0,
+          newslettersUnsubscribed: 0,
+          previousScore: 0,
+        }),
+        controlRoom: {
+          criticalToday: [],
+          pendingTasks: [],
+          upcomingDeadlines: [],
+          unreadImportant: [],
+          importantThreads: [],
+        },
+      };
+    }
+
+    const now = new Date();
+    const start7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const start14d = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const start30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const [currentCounts, previousCounts] = await Promise.all([
+      this.getHealthCounts(connectionIds, start7d, now),
+      this.getHealthCounts(connectionIds, start14d, start7d),
+    ]);
+
+    const [avgResponseHours, previousResponseHours] = await Promise.all([
+      this.getAverageResponseHours(connectionIds, userEmails, start7d, now),
+      this.getAverageResponseHours(
+        connectionIds,
+        userEmails,
+        start14d,
+        start7d,
+      ),
+    ]);
+
+    const [automationsCount, newslettersUnsubscribed] = await Promise.all([
+      this.workflowRuleRepository.count({ where: { userId } }),
+      this.senderProfileRepository.count({
+        where: { userId, status: 'unsubscribed' },
+      }),
+    ]);
+
+    const currentScore = this.calculateInboxHealthScore({
+      loadCount: currentCounts.total,
+      importantShare: currentCounts.importantShare,
+      noiseShare: currentCounts.noiseShare,
+      avgResponseHours,
+      automationsCount,
+      newslettersUnsubscribed,
+    });
+    const previousScore = this.calculateInboxHealthScore({
+      loadCount: previousCounts.total,
+      importantShare: previousCounts.importantShare,
+      noiseShare: previousCounts.noiseShare,
+      avgResponseHours: previousResponseHours,
+      automationsCount,
+      newslettersUnsubscribed,
+    });
+
+    const controlRoom = await this.buildControlRoom(
+      connectionIds,
+      start30d,
+      now,
+    );
+
+    return {
+      stats: { totalConnections, totalEmails },
+      inboxHealth: this.buildInboxHealthSummary({
+        loadCount: currentCounts.total,
+        importantShare: currentCounts.importantShare,
+        noiseShare: currentCounts.noiseShare,
+        avgResponseHours,
+        automationsCount,
+        newslettersUnsubscribed,
+        previousScore,
+        currentScore,
+      }),
+      controlRoom,
+    };
+  }
+
+  private async getHealthCounts(
+    connectionIds: string[],
+    start: Date,
+    end: Date,
+  ) {
+    const baseQuery = this.messageRepository
+      .createQueryBuilder('message')
+      .where('message.connectionId IN (:...connectionIds)', {
+        connectionIds,
+      })
+      .andWhere('COALESCE(message.sentAt, message.createdAt) >= :start', {
+        start,
+      })
+      .andWhere('COALESCE(message.sentAt, message.createdAt) < :end', { end });
+
+    const [total, importantCount, noiseCount] = await Promise.all([
+      baseQuery.getCount(),
+      baseQuery.clone().andWhere('message.triageIsCritical = true').getCount(),
+      baseQuery.clone().andWhere('message.isNoise = true').getCount(),
+    ]);
+
+    const safeTotal = total || 0;
+    return {
+      total: safeTotal,
+      importantShare: safeTotal ? importantCount / safeTotal : 0,
+      noiseShare: safeTotal ? noiseCount / safeTotal : 0,
+    };
+  }
+
+  private async getAverageResponseHours(
+    connectionIds: string[],
+    userEmails: string[],
+    start: Date,
+    end: Date,
+  ) {
+    if (connectionIds.length === 0 || userEmails.length === 0) {
+      return null;
+    }
+
+    const messages = await this.messageRepository
+      .createQueryBuilder('message')
+      .addSelect(
+        'COALESCE(message.sentAt, message.createdAt)',
+        'message_timestamp',
+      )
+      .where('message.connectionId IN (:...connectionIds)', {
+        connectionIds,
+      })
+      .andWhere('COALESCE(message.sentAt, message.createdAt) >= :start', {
+        start,
+      })
+      .andWhere('COALESCE(message.sentAt, message.createdAt) < :end', { end })
+      .orderBy('message_timestamp', 'ASC')
+      .take(500)
+      .getMany();
+
+    if (messages.length === 0) {
+      return null;
+    }
+
+    const messageIds = messages.map((message) => message.id);
+    const fromParticipants = await this.participantRepository.find({
+      where: { messageId: In(messageIds), role: 'from' },
+    });
+    const senderByMessage = new Map(
+      fromParticipants.map((participant) => [
+        participant.messageId,
+        participant.email.toLowerCase(),
+      ]),
+    );
+
+    const userEmailSet = new Set(
+      userEmails.map((email) => email.toLowerCase()),
+    );
+    const threadMap = new Map<string, EmailMessage[]>();
+
+    for (const message of messages) {
+      if (!message.threadId) {
+        continue;
+      }
+      const list = threadMap.get(message.threadId) ?? [];
+      list.push(message);
+      threadMap.set(message.threadId, list);
+    }
+
+    const responseDurations: number[] = [];
+
+    for (const threadMessages of threadMap.values()) {
+      const sorted = threadMessages.slice().sort((a, b) => {
+        const aTime = (a.sentAt ?? a.createdAt).getTime();
+        const bTime = (b.sentAt ?? b.createdAt).getTime();
+        return aTime - bTime;
+      });
+
+      let lastIncomingAt: Date | null = null;
+
+      for (const message of sorted) {
+        const timestamp = message.sentAt ?? message.createdAt;
+        const sender = senderByMessage.get(message.id);
+        const isFromUser = sender ? userEmailSet.has(sender) : false;
+
+        if (!isFromUser) {
+          lastIncomingAt = timestamp;
+          continue;
+        }
+
+        if (lastIncomingAt) {
+          responseDurations.push(
+            timestamp.getTime() - lastIncomingAt.getTime(),
+          );
+          lastIncomingAt = null;
+        }
+      }
+    }
+
+    if (responseDurations.length === 0) {
+      return null;
+    }
+
+    const averageMs =
+      responseDurations.reduce((acc, value) => acc + value, 0) /
+      responseDurations.length;
+    return Number((averageMs / (1000 * 60 * 60)).toFixed(2));
+  }
+
+  private calculateInboxHealthScore(input: {
+    loadCount: number;
+    importantShare: number;
+    noiseShare: number;
+    avgResponseHours: number | null;
+    automationsCount: number;
+    newslettersUnsubscribed: number;
+  }) {
+    const normalize = (value: number, max: number) =>
+      Math.min(1, Math.max(0, value / max));
+    const clamp = (value: number) => Math.min(100, Math.max(0, value));
+
+    const loadScore = (1 - normalize(input.loadCount, 200)) * 25;
+    const importantScore = input.importantShare * 25;
+    const noiseScore = (1 - input.noiseShare) * 20;
+    const responseScore =
+      input.avgResponseHours === null
+        ? 10
+        : (1 - normalize(input.avgResponseHours, 48)) * 20;
+    const automationScore = normalize(input.automationsCount, 10) * 5;
+    const unsubscribeScore = normalize(input.newslettersUnsubscribed, 30) * 5;
+
+    return clamp(
+      loadScore +
+        importantScore +
+        noiseScore +
+        responseScore +
+        automationScore +
+        unsubscribeScore,
+    );
+  }
+
+  private buildInboxHealthSummary(input: {
+    loadCount: number;
+    importantShare: number;
+    noiseShare: number;
+    avgResponseHours: number | null;
+    automationsCount: number;
+    newslettersUnsubscribed: number;
+    previousScore: number;
+    currentScore?: number;
+  }) {
+    const currentScore = input.currentScore ?? 0;
+    const trend = Number((currentScore - input.previousScore).toFixed(1));
+    const message =
+      trend > 0
+        ? `Your inbox efficiency improved ${trend}% this week!`
+        : trend < 0
+          ? `Your inbox efficiency declined ${Math.abs(trend)}% this week.`
+          : 'Your inbox efficiency held steady this week.';
+
+    return {
+      score: Math.round(currentScore),
+      trend,
+      message,
+      metrics: {
+        inboxLoad: input.loadCount,
+        importantShare: Math.round(input.importantShare * 100),
+        noiseShare: Math.round(input.noiseShare * 100),
+        avgResponseHours: input.avgResponseHours,
+        automationsCount: input.automationsCount,
+        newslettersUnsubscribed: input.newslettersUnsubscribed,
+      },
+    };
+  }
+
+  private async buildControlRoom(
+    connectionIds: string[],
+    start: Date,
+    end: Date,
+  ) {
+    const messages = await this.messageRepository
+      .createQueryBuilder('message')
+      .addSelect(
+        'COALESCE(message.sentAt, message.createdAt)',
+        'message_timestamp',
+      )
+      .where('message.connectionId IN (:...connectionIds)', {
+        connectionIds,
+      })
+      .andWhere('COALESCE(message.sentAt, message.createdAt) >= :start', {
+        start,
+      })
+      .andWhere('COALESCE(message.sentAt, message.createdAt) < :end', { end })
+      .orderBy('message_timestamp', 'DESC')
+      .take(300)
+      .getMany();
+
+    const messageIds = messages.map((message) => message.id);
+    const [participants, analyses] = await Promise.all([
+      messageIds.length
+        ? this.participantRepository.find({
+            where: { messageId: In(messageIds), role: 'from' },
+          })
+        : [],
+      messageIds.length
+        ? this.emailAnalysisRepository.find({
+            where: { messageId: In(messageIds) },
+          })
+        : [],
+    ]);
+
+    const fromByMessageId = new Map(
+      participants.map((participant) => [participant.messageId, participant]),
+    );
+    const analysisByMessageId = new Map(
+      analyses.map((analysis) => [analysis.messageId, analysis]),
+    );
+
+    const now = new Date();
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const criticalToday = messages
+      .filter((message) => {
+        const timestamp = message.sentAt ?? message.createdAt;
+        return message.triageIsCritical && timestamp >= dayAgo;
+      })
+      .slice(0, 5)
+      .map((message) => {
+        const from = fromByMessageId.get(message.id);
+        const analysis = analysisByMessageId.get(message.id);
+        return {
+          messageId: message.id,
+          subject: message.subject ?? '(no subject)',
+          summary:
+            message.triageSummary ?? analysis?.summary ?? message.snippet ?? '',
+          sentAt: (message.sentAt ?? message.createdAt).toISOString(),
+          from: from
+            ? { name: from.name, email: from.email }
+            : { name: null, email: '' },
+        };
+      });
+
+    const unreadImportant = messages
+      .filter((message) => message.isUnread && message.triageIsCritical)
+      .slice(0, 5)
+      .map((message) => {
+        const from = fromByMessageId.get(message.id);
+        return {
+          messageId: message.id,
+          subject: message.subject ?? '(no subject)',
+          sentAt: (message.sentAt ?? message.createdAt).toISOString(),
+          from: from
+            ? { name: from.name, email: from.email }
+            : { name: null, email: '' },
+        };
+      });
+
+    const pendingTasks: Array<{
+      messageId: string;
+      title: string;
+      dueDate: string | null;
+      from: { name: string | null; email: string };
+    }> = [];
+    const upcomingDeadlines: typeof pendingTasks = [];
+    const taskKeySet = new Set<string>();
+
+    const extractTasks = (
+      message: EmailMessage,
+      analysis: EmailAnalysis | undefined,
+    ) => {
+      const tasks: Array<{ title: string; dueDate: string | null }> = [];
+      if (Array.isArray(message.triageActionItems)) {
+        for (const action of message.triageActionItems) {
+          if (action?.task) {
+            tasks.push({
+              title: action.task,
+              dueDate: action.dueDate ?? null,
+            });
+          }
+        }
+      }
+
+      if (Array.isArray(analysis?.actions)) {
+        for (const action of analysis.actions) {
+          const title = typeof action.title === 'string' ? action.title : null;
+          if (!title) {
+            continue;
+          }
+          const dueDate =
+            typeof action.dueDate === 'string' ? action.dueDate : null;
+          tasks.push({ title, dueDate });
+        }
+      }
+
+      return tasks;
+    };
+
+    for (const message of messages) {
+      const analysis = analysisByMessageId.get(message.id);
+      const from = fromByMessageId.get(message.id);
+      const sender = from
+        ? { name: from.name, email: from.email }
+        : { name: null, email: '' };
+      const tasks = extractTasks(message, analysis);
+      for (const task of tasks) {
+        const key = `${message.id}|${task.title}|${task.dueDate ?? ''}`;
+        if (taskKeySet.has(key)) {
+          continue;
+        }
+        taskKeySet.add(key);
+
+        const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+        const safeDueDate =
+          dueDate && Number.isFinite(dueDate.getTime()) ? dueDate : null;
+        const entry = {
+          messageId: message.id,
+          title: task.title,
+          dueDate: safeDueDate ? safeDueDate.toISOString() : null,
+          from: sender,
+        };
+
+        if (safeDueDate && safeDueDate >= now) {
+          upcomingDeadlines.push(entry);
+        } else {
+          pendingTasks.push(entry);
+        }
+      }
+    }
+
+    pendingTasks.sort((a, b) => a.title.localeCompare(b.title));
+    upcomingDeadlines.sort((a, b) => {
+      if (a.dueDate && b.dueDate) {
+        return a.dueDate.localeCompare(b.dueDate);
+      }
+      if (a.dueDate) {
+        return -1;
+      }
+      if (b.dueDate) {
+        return 1;
+      }
+      return 0;
+    });
+
+    const importantThreadIds = Array.from(
+      new Set(
+        messages
+          .filter((message) => message.triageIsCritical && message.threadId)
+          .map((message) => message.threadId as string),
+      ),
+    );
+
+    const threads = importantThreadIds.length
+      ? await this.threadRepository.find({
+          where: { id: In(importantThreadIds) },
+        })
+      : [];
+    const threadAnalyses = importantThreadIds.length
+      ? await this.threadAnalysisRepository.find({
+          where: { threadId: In(importantThreadIds) },
+        })
+      : [];
+    const analysisByThreadId = new Map(
+      threadAnalyses.map((analysis) => [analysis.threadId, analysis]),
+    );
+    const latestMessageByThreadId = new Map<string, EmailMessage>();
+    for (const message of messages) {
+      if (!message.threadId) {
+        continue;
+      }
+      const existing = latestMessageByThreadId.get(message.threadId);
+      if (!existing) {
+        latestMessageByThreadId.set(message.threadId, message);
+        continue;
+      }
+      const existingTime = existing.sentAt ?? existing.createdAt;
+      const currentTime = message.sentAt ?? message.createdAt;
+      if (currentTime > existingTime) {
+        latestMessageByThreadId.set(message.threadId, message);
+      }
+    }
+
+    const importantThreads = threads
+      .map((thread) => {
+        const analysis = analysisByThreadId.get(thread.id);
+        const latest = latestMessageByThreadId.get(thread.id);
+        return {
+          threadId: thread.id,
+          messageId: latest?.id ?? null,
+          subject: thread.subject ?? 'Thread',
+          summary:
+            analysis?.summary ??
+            thread.snippet ??
+            'Thread summary unavailable.',
+          lastMessageAt: thread.lastMessageAt?.toISOString() ?? null,
+        };
+      })
+      .sort((a, b) => {
+        if (a.lastMessageAt && b.lastMessageAt) {
+          return b.lastMessageAt.localeCompare(a.lastMessageAt);
+        }
+        if (a.lastMessageAt) {
+          return -1;
+        }
+        if (b.lastMessageAt) {
+          return 1;
+        }
+        return 0;
+      })
+      .slice(0, 5);
+
+    return {
+      criticalToday,
+      pendingTasks: pendingTasks.slice(0, 6),
+      upcomingDeadlines: upcomingDeadlines.slice(0, 6),
+      unreadImportant,
+      importantThreads,
+    };
+  }
 
   async listConnections(userId: string) {
     const connections = await this.connectionRepository.find({

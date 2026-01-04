@@ -1,15 +1,10 @@
 "use server";
 
 import type { AppRouter } from "@server/trpc/trpc.router";
-import {
-  createTRPCClient,
-  httpBatchLink,
-  httpBatchStreamLink,
-  loggerLink,
-} from "@trpc/client";
+import { createTRPCClient, httpBatchLink, loggerLink } from "@trpc/client";
 import { createServerSideHelpers } from "@trpc/react-query/server";
 import { env } from "@web/env";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { cache } from "react";
 import superjson from "superjson";
 import { makeQueryClient } from "./query-client";

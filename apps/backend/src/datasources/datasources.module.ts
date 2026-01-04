@@ -2,9 +2,12 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ContactsModule } from '@server/contacts/contacts.module';
 import { JobsModule } from '@server/jobs/jobs.module';
-import { EmailAnalysis } from '@server/llm/email-analysis.entity';
-import { ThreadAnalysis } from '@server/llm/thread-analysis.entity';
+import { EmailAnalysis } from '@server/llm/entities/email-analysis.entity';
+import { ThreadAnalysis } from '@server/llm/entities/thread-analysis.entity';
+import { NoiseModule } from '@server/noise/noise.module';
+import { SenderProfile } from '@server/noise/entities/sender-profile.entity';
 import { TrpcModule } from '@server/trpc/trpc.module';
+import { WorkflowRule } from '@server/workflow/entities/workflow-rule.entity';
 import { DatasourceConnection } from './datasource-connection.entity';
 import { DatasourceOauthState } from './datasource-oauth-state.entity';
 import { DatasourcesController } from './datasources.controller';
@@ -24,6 +27,7 @@ import { JmapService } from './jmap.service';
     forwardRef(() => TrpcModule),
     forwardRef(() => JobsModule),
     forwardRef(() => ContactsModule),
+    forwardRef(() => NoiseModule),
     TypeOrmModule.forFeature([
       DatasourceConnection,
       DatasourceOauthState,
@@ -35,6 +39,8 @@ import { JmapService } from './jmap.service';
       EmailAttachment,
       EmailAnalysis,
       ThreadAnalysis,
+      SenderProfile,
+      WorkflowRule,
     ]),
   ],
   providers: [

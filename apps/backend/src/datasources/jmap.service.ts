@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type AppConfigurationType } from '@server/config/configuration';
 import { ContactsService } from '@server/contacts/contacts.service';
 import { JobsService } from '@server/jobs/jobs.service';
+import { NoiseService } from '@server/noise/services/noise.service';
 import { In, Repository } from 'typeorm';
 import {
   DatasourceConnection,
@@ -11,6 +12,7 @@ import {
 } from './datasource-connection.entity';
 import {
   buildContactEntries,
+  extractUnsubscribeLinks,
   getSyncStartAt,
   type ParsedAddress,
   parseSyncStartAt,
@@ -227,6 +229,7 @@ export class JmapService {
     private readonly configService: ConfigService<AppConfigurationType>,
     private readonly jobsService: JobsService,
     private readonly contactsService: ContactsService,
+    private readonly noiseService: NoiseService,
   ) {}
 
   isJmapProvider(provider: DatasourceProvider) {
@@ -790,6 +793,11 @@ export class JmapService {
     const sentAt = receivedAt ? new Date(receivedAt) : null;
     const mailboxIds = Object.keys(email.mailboxIds ?? {});
     const content = buildJmapContent(email);
+    const unsubscribeLinks = extractUnsubscribeLinks({
+      text: content.textBody,
+      html: content.htmlBody,
+      snippet: email.preview,
+    });
     if (syncStartAt && sentAt && sentAt < syncStartAt) {
       return;
     }
@@ -861,11 +869,16 @@ export class JmapService {
       storedMessage.metadata = {
         ...(storedMessage.metadata ?? {}),
         mailboxIds,
+        unsubscribeLinks,
       };
 
       storedMessage = await messageRepository.save(storedMessage);
+      if (!storedMessage) {
+        return;
+      }
+      let savedMessage = storedMessage;
 
-      await participantRepository.delete({ messageId: storedMessage.id });
+      await participantRepository.delete({ messageId: savedMessage.id });
 
       const participants = [
         ...from.map((entry) => ({ ...entry, role: 'from' as const })),
@@ -875,7 +888,7 @@ export class JmapService {
         ...replyTo.map((entry) => ({ ...entry, role: 'reply-to' as const })),
       ].map((entry) =>
         participantRepository.create({
-          messageId: storedMessage.id,
+          messageId: savedMessage.id,
           email: entry.email,
           name: entry.name,
           role: entry.role,
@@ -886,7 +899,29 @@ export class JmapService {
         await participantRepository.save(participants);
       }
 
-      await messageLabelRepository.delete({ messageId: storedMessage.id });
+      const sender = from[0] ?? null;
+      if (sender) {
+        const matchedRule = await this.noiseService.matchBlockRuleForMessage({
+          userId: connection.userId,
+          senderEmail: sender.email,
+          senderDomain: sender.email.split('@')[1] ?? null,
+          senderName: sender.name,
+          subject,
+        });
+        if (matchedRule) {
+          savedMessage.isBlocked = true;
+          savedMessage.blockRuleId = matchedRule.id;
+          savedMessage.isArchived = matchedRule.action === 'archive';
+          savedMessage.isNoise = matchedRule.action === 'moveToNoise';
+          savedMessage.metadata = {
+            ...(savedMessage.metadata ?? {}),
+            blockRuleAction: matchedRule.action,
+          };
+          savedMessage = await messageRepository.save(savedMessage);
+        }
+      }
+
+      await messageLabelRepository.delete({ messageId: savedMessage.id });
 
       if (mailboxIds.length > 0) {
         const labels = await labelRepository.find({
@@ -905,7 +940,7 @@ export class JmapService {
           .filter((label): label is EmailLabel => Boolean(label))
           .map((label) =>
             messageLabelRepository.create({
-              messageId: storedMessage.id,
+              messageId: savedMessage.id,
               labelId: label.id,
             }),
           );
@@ -916,11 +951,11 @@ export class JmapService {
       }
 
       const existingAttachments = await attachmentRepository.find({
-        where: { messageId: storedMessage.id },
+        where: { messageId: savedMessage.id },
       });
 
       if (existingAttachments.length > 0) {
-        await attachmentRepository.delete({ messageId: storedMessage.id });
+        await attachmentRepository.delete({ messageId: savedMessage.id });
       }
 
       const attachments = await this.buildJmapAttachmentEntities(
@@ -928,7 +963,7 @@ export class JmapService {
         accessToken,
         accountId,
         content.attachments,
-        storedMessage.id,
+        savedMessage.id,
       );
 
       let savedAttachments: EmailAttachment[] = [];
@@ -953,11 +988,11 @@ export class JmapService {
       thread.messageCount = messageCount;
       await threadRepository.save(thread);
 
-      if (!storedMessage.llmProcessed && isUnread) {
+      if (!savedMessage.llmProcessed && isUnread) {
         await this.jobsService.enqueueLlmAnalysis({
           type: 'email',
           userId: connection.userId,
-          messageId: storedMessage.id,
+          messageId: savedMessage.id,
           threadId: thread.id,
         });
       }
