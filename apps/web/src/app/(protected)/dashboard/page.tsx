@@ -199,7 +199,7 @@ export default async function DashboardPage({
               ) : (
                 controlRoom.pendingTasks.map((task) => (
                   <Link
-                    key={`${task.messageId}-${task.title}`}
+                    key={`${task.messageId}-${task.title}-${task.dueDate ?? ""}`}
                     href={`/emails?message=${task.messageId}`}
                     className="block rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 hover:bg-white dark:border-gray-800 dark:bg-white/5 dark:text-gray-200"
                   >

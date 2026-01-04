@@ -6,6 +6,7 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
     label: "Dashboard",
     icon: (
       <svg
+        key="icon-dashboard"
         xmlns="http://www.w3.org/2000/svg"
         width="22"
         height="22"
@@ -28,6 +29,7 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
     label: "Emails",
     icon: (
       <svg
+        key="icon-emails"
         xmlns="http://www.w3.org/2000/svg"
         width="22"
         height="22"
@@ -50,6 +52,7 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
     label: "Contacts",
     icon: (
       <svg
+        key="icon-contacts"
         xmlns="http://www.w3.org/2000/svg"
         width="22"
         height="22"
@@ -72,6 +75,7 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
     label: "Noise reduction",
     icon: (
       <svg
+        key="icon-noise"
         xmlns="http://www.w3.org/2000/svg"
         width="22"
         height="22"
@@ -94,6 +98,7 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
     label: "Digests",
     icon: (
       <svg
+        key="icon-digests"
         xmlns="http://www.w3.org/2000/svg"
         width="22"
         height="22"
@@ -116,6 +121,7 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
     label: "Integrations",
     icon: (
       <svg
+        key="icon-integrations"
         xmlns="http://www.w3.org/2000/svg"
         width="22"
         height="22"
@@ -138,6 +144,7 @@ export const SIDEBAR_DASHBOARD_MENU_ITEMS: SidebarMenuItem[] = [
     label: "Workflow",
     icon: (
       <svg
+        key="icon-workflow"
         xmlns="http://www.w3.org/2000/svg"
         width="22"
         height="22"
