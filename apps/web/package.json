@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "@dreamtalesai/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@better-auth/stripe": "^1.4.5",
+    "@dreamtalesai/auth": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
-    "@mailestro/auth": "workspace:*",
     "@stripe/stripe-js": "^8.5.3",
     "@svgr/webpack": "^8.1.0",
     "@t3-oss/env-nextjs": "^0.13.10",
@@ -22,6 +22,7 @@
     "@trpc/client": "^11.8.1",
     "@trpc/next": "^11.8.1",
     "@trpc/react-query": "^11.8.1",
+    "@xyflow/react": "^12.10.0",
     "ai": "^5.0.107",
     "better-auth": "^1.4.5",
     "client-only": "^0.0.1",

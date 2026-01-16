@@ -1,5 +1,5 @@
+import { createBetterAuthBaseServerConfig } from '@dreamtalesai/auth/server';
 import { typeormAdapter } from '@hedystia/better-auth-typeorm';
-import { createBetterAuthBaseServerConfig } from '@mailestro/auth/server';
 import { betterAuth } from 'better-auth';
 import Stripe from 'stripe';
 import { DataSource } from 'typeorm';

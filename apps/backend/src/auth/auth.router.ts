@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { AuthService } from '@server/auth/auth.service';
 import { ProfileService } from '@server/auth/profile.service';
-import { JobsService } from '@server/jobs/jobs.service';
 import { RouterBuilder } from '@server/trpc/trpc.interface';
 import { authRequired } from '@server/trpc/trpc.middleware';
 import { TrpcService } from '@server/trpc/trpc.service';
@@ -19,7 +19,7 @@ const UpdateProfileInput = z.object({
 
 export const createAuthRouter = (
   trpc: TrpcService,
-  jobsService: JobsService,
+  authService: AuthService,
   profileService: ProfileService,
 ) => {
   return trpc.router({
@@ -30,11 +30,7 @@ export const createAuthRouter = (
       })
       .input(MagicLinkInput)
       .mutation(async ({ input }) => {
-        await jobsService.enqueueEmail({
-          templateId: 'magic-link',
-          to: input.email,
-          payload: { email: input.email, token: input.token, url: input.url },
-        });
+        await authService.sendMagicLink(input.email, input.token, input.url);
       }),
 
     me: trpc.procedure
@@ -69,11 +65,11 @@ export type AuthRouter = ReturnType<typeof createAuthRouter>;
 export class AuthRouterBuilder implements RouterBuilder<AuthRouter> {
   constructor(
     private readonly trpc: TrpcService,
-    private readonly jobsService: JobsService,
+    private readonly authService: AuthService,
     private readonly profileService: ProfileService,
   ) {}
 
   public buildRouter(): AuthRouter {
-    return createAuthRouter(this.trpc, this.jobsService, this.profileService);
+    return createAuthRouter(this.trpc, this.authService, this.profileService);
   }
 }

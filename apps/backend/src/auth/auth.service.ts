@@ -1,8 +1,7 @@
-import { createBetterAuthBaseServerConfig } from '@mailestro/auth/server';
-import { Injectable } from '@nestjs/common';
+import { createBetterAuthBaseServerConfig } from '@dreamtalesai/auth/server';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { type AppConfigurationType } from '@server/config/configuration';
-import { JobsService } from '@server/jobs/jobs.service';
 import { RedisService } from '@server/redis/redis.service';
 import { betterAuth } from 'better-auth';
 import Stripe from 'stripe';
@@ -13,11 +12,11 @@ const stripeClient = new Stripe('a', {
 
 @Injectable()
 export class AuthService {
+  private logger = new Logger(AuthService.name);
   private auth: ReturnType<typeof betterAuth>;
 
   constructor(
     private readonly redisService: RedisService,
-    private readonly jobsService: JobsService,
     private readonly configService: ConfigService<AppConfigurationType>,
   ) {
     const redis = this.redisService.redis;
@@ -29,17 +28,7 @@ export class AuthService {
         [],
         {
           sendMagicLink: async (email: string, token: string, url: string) => {
-            const emailConfig =
-              this.configService.get<AppConfigurationType['email']>('email');
-            const templateId = emailConfig?.templates?.magicLink;
-            if (!templateId) {
-              throw new Error('Config key missing: email.templates.magicLink');
-            }
-            await this.jobsService.enqueueEmail({
-              templateId,
-              to: email,
-              payload: { email, token, url },
-            });
+            await this.sendMagicLink(email, token, url);
           },
         },
       ),
@@ -48,7 +37,7 @@ export class AuthService {
 
       secondaryStorage: {
         get: async (key: string) => await redis.get(key),
-        set: async (key: string, value: string, ttl: number) =>
+        set: async (key: string, value: string, ttl?: number) =>
           await redis.set(key, value, 'EX', ttl ?? 60),
         delete: async (key: string) => {
           await redis.del(key);
@@ -56,6 +45,19 @@ export class AuthService {
       },
       hooks: {}, // minimum required to use hooks. read above for more details.
     });
+  }
+
+  async sendMagicLink(email: string, _token: string, _url: string) {
+    const emailConfig =
+      this.configService.get<AppConfigurationType['email']>('email');
+    const templateId = emailConfig?.templates?.magicLink;
+
+    if (!templateId) {
+      this.logger.warn('Magic link template is not configured.');
+      return;
+    }
+
+    this.logger.log(`Magic link requested for ${email}.`);
   }
 
   getAuth() {

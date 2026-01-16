@@ -21,11 +21,16 @@ export const trpc = createTRPCClient<AppRouter>({
     }),
     httpBatchLink({
       url: `${env.NEXT_PUBLIC_API_BASE_URL}/trpc`,
+      fetch(url, options) {
+        return fetch(url, {
+          ...options,
+          credentials: "omit",
+        });
+      },
+
       async headers() {
-        // console.log("headers", await headers());
         const heads = new Map();
         heads.set("cookie", (await cookies()).toString());
-        // console.log("cookies", (await cookies()).toString());
         heads.set("x-trpc-source", "rsc");
         return Object.fromEntries(heads);
       },

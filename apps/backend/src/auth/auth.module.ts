@@ -1,8 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { JobsModule } from '@server/jobs/jobs.module';
-import { JobsService } from '@server/jobs/jobs.service';
 import { RedisModule } from '@server/redis/redis.module';
 import { RedisService } from '@server/redis/redis.service';
 import { TrpcModule } from '@server/trpc/trpc.module';
@@ -25,7 +23,6 @@ import { ProfileService } from './profile.service';
 @Module({
   imports: [
     RedisModule,
-    JobsModule,
     forwardRef(() => TrpcModule),
     TypeOrmModule.forFeature([
       Account,
@@ -39,19 +36,13 @@ import { ProfileService } from './profile.service';
       Verification,
     ]),
     BetterAuthModule.forRootAsync({
-      imports: [JobsModule],
       useFactory: (
         redisService: RedisService,
-        jobsService: JobsService,
         configService: ConfigService,
       ) => ({
-        auth: new AuthService(
-          redisService,
-          jobsService,
-          configService,
-        ).getAuth(),
+        auth: new AuthService(redisService, configService).getAuth(),
       }),
-      inject: [RedisService, JobsService, ConfigService],
+      inject: [RedisService, ConfigService],
     }),
   ],
   providers: [AuthService, PrincipalService, AuthRouterBuilder, ProfileService],

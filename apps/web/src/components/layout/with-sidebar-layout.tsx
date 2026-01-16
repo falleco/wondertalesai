@@ -2,7 +2,6 @@
 
 import type { User } from "better-auth";
 import { useEffect, useRef, useState } from "react";
-import DashboardHeader from "./dashboard-header";
 import DashboardRightSidebar from "./dashboard-right-sidebar";
 import DashboardSidebar, { type SidebarMenuItem } from "./dashboard-sidebar";
 
@@ -31,13 +30,13 @@ export default function WithSidebarLayout({
 
   return (
     <div className="h-screen overflow-hidden flex flex-col">
-      <DashboardHeader
+      {/* <DashboardHeader
         user={user}
         ref={headerRef}
         toggleSidebar={toggleSidebar}
         sidebarOpen={sidebarOpen}
         toggleRightSidebar={toggleRightSidebar}
-      />
+      /> */}
 
       <div className="grid lg:grid-cols-[auto_1fr] dark:bg-gray-900 relative flex-1">
         <DashboardSidebar

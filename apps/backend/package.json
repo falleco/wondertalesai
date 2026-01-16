@@ -1,5 +1,5 @@
 {
-  "name": "@mailestro/backend",
+  "name": "@dreamtalesai/backend",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -36,9 +36,9 @@
     "@bull-board/api": "^6.15.0",
     "@bull-board/express": "^6.15.0",
     "@bull-board/nestjs": "^6.15.0",
+    "@dreamtalesai/auth": "workspace:*",
     "@hedystia/better-auth-typeorm": "^0.4.4",
     "@liaoliaots/nestjs-redis-health": "^9.0.4",
-    "@mailestro/auth": "workspace:*",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/cache-manager": "^3.0.1",
     "@nestjs/common": "^11.1.9",

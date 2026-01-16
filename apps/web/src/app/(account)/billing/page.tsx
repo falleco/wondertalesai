@@ -50,9 +50,13 @@ export default async function BillingPage() {
 
   const billingData = invoices.data
     .map((invoice) => {
-      const priceId =
+      const rawPrice =
         invoice.lines.data[1]?.pricing?.price_details?.price ||
         invoice.lines.data[0]?.pricing?.price_details?.price;
+      const priceId =
+        typeof rawPrice === "string"
+          ? rawPrice
+          : (rawPrice as { id?: string } | null | undefined)?.id;
 
       if (!priceId) return null;
 

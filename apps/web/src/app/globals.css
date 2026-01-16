@@ -201,6 +201,38 @@
   }
 }
 
+.reactflow-canvas {
+  background-color: #f8fafc;
+}
+
+[data-theme="dark"] .reactflow-canvas {
+  background-color: #111827;
+}
+
+.reactflow-canvas .react-flow__controls {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="dark"] .reactflow-canvas .react-flow__controls {
+  background-color: #0f172a;
+  border-color: #374151;
+  box-shadow: 0 6px 16px rgba(2, 6, 23, 0.4);
+}
+
+.reactflow-canvas .react-flow__controls button {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+}
+
+[data-theme="dark"] .reactflow-canvas .react-flow__controls button {
+  background-color: #111827;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
 /* Desktop hover behavior */
 @media (min-width: 1024px) {
   .nav-item:hover .dropdown-menu {

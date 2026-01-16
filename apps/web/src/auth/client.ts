@@ -1,4 +1,4 @@
-import { createBetterAuthBaseClientConfig } from "@mailestro/auth/client";
+import { createBetterAuthBaseClientConfig } from "@dreamtalesai/auth/client";
 import type { auth } from "@web/auth/server";
 import { InferAuth } from "better-auth/client";
 import { createAuthClient } from "better-auth/react"; // make sure to import from better-auth/react

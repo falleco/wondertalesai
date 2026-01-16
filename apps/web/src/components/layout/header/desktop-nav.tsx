@@ -13,8 +13,8 @@ export default function DesktopNav() {
     setActiveDropdownKey((prevKey) => (prevKey === key ? "" : key));
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: required
   useEffect(() => {
-    console.log("pathname changed", pathname);
     // Hide dropdown on pathname changes
     setActiveDropdownKey("");
   }, [pathname]);

@@ -1,4 +1,4 @@
-# Mailestro - Email Automation Platform
+# Dream Tales AI - Interactive Storybook for Kids
 
 ## General Usage
 

@@ -1,4 +1,4 @@
-import { createBetterAuthBaseServerConfig } from "@mailestro/auth/server";
+import { createBetterAuthBaseServerConfig } from "@dreamtalesai/auth/server";
 import { env } from "@web/env";
 import { redis } from "@web/lib/redis";
 import { trpc } from "@web/trpc/server";
@@ -41,17 +41,17 @@ export const auth = betterAuth({
   },
 
   secondaryStorage: {
-    get: async (key) => await redis.get(key),
-    set: async (key, value, ttl) =>
+    get: async (key: string) => await redis.get(key),
+    set: async (key: string, value: string, ttl?: number) =>
       await redis.set(key, value, "EX", ttl ?? 60),
-    delete: async (key) => {
+    delete: async (key: string) => {
       await redis.del(key);
     },
   },
 
   session: {
     cookieCache: {
-      enabled: true,
+      enabled: false,
       maxAge: 5 * 60, // Cache duration in seconds
     },
   },

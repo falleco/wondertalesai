@@ -78,20 +78,6 @@ export const GetAppConfiguration = async () => {
       fromName: config.SENDGRID_FROM_NAME,
       templates: {
         magicLink: config.SENDGRID_MAGIC_LINK_TEMPLATE_ID,
-        weeklyCleanupDigest: config.SENDGRID_WEEKLY_DIGEST_TEMPLATE_ID,
-        dailyDigest: config.SENDGRID_DIGEST_DAILY_TEMPLATE_ID,
-        weeklyDigest: config.SENDGRID_DIGEST_WEEKLY_TEMPLATE_ID,
-      },
-    },
-    integrations: {
-      gmail: {
-        clientId: config.GMAIL_CLIENT_ID,
-        clientSecret: config.GMAIL_CLIENT_SECRET,
-        redirectUri: config.GMAIL_REDIRECT_URI,
-        pubsubTopic: config.GMAIL_PUBSUB_TOPIC,
-      },
-      fastmail: {
-        apiKey: config.FASTMAIL_API_KEY,
       },
     },
   };

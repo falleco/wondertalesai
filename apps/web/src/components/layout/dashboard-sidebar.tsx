@@ -50,7 +50,7 @@ export default function DashboardSidebar({
                     <div className="absolute left-0 inset-y-[5px] w-[3px] bg-primary-500" />
                   )}
 
-                  {/* {icon} */}
+                  {icon}
                   {label}
                 </Link>
               );

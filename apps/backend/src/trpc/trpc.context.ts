@@ -14,6 +14,7 @@ export const generateInjectedContext = (principalService: PrincipalService) => {
         const principal = await principalService.getPrincipal(req);
 
         if (!principal) {
+          console.log('❤️ no principal found');
           return null;
         }
 
