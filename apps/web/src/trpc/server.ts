@@ -1,7 +1,13 @@
 "use server";
 
 import type { AppRouter } from "@server/trpc/trpc.router";
-import { createTRPCClient, httpBatchLink, loggerLink } from "@trpc/client";
+import {
+  createTRPCClient,
+  httpBatchLink,
+  httpBatchStreamLink,
+  loggerLink,
+  splitLink,
+} from "@trpc/client";
 import { createServerSideHelpers } from "@trpc/react-query/server";
 import { env } from "@web/env";
 import { cookies } from "next/headers";
@@ -19,22 +25,45 @@ export const trpc = createTRPCClient<AppRouter>({
       enabled: (op) =>
         false || (op.direction === "down" && op.result instanceof Error),
     }),
-    httpBatchLink({
-      url: `${env.NEXT_PUBLIC_API_BASE_URL}/trpc`,
-      fetch(url, options) {
-        return fetch(url, {
-          ...options,
-          credentials: "omit",
-        });
+    splitLink({
+      condition(op) {
+        return op.path === "story.streamPage";
       },
+      true: httpBatchStreamLink({
+        url: `${env.NEXT_PUBLIC_TRPC_STREAM_URL ?? env.NEXT_PUBLIC_API_BASE_URL}/trpc`,
+        fetch(url, options) {
+          return fetch(url, {
+            ...options,
+            cache: "no-store",
+            credentials: "omit",
+          });
+        },
 
-      async headers() {
-        const heads = new Map();
-        heads.set("cookie", (await cookies()).toString());
-        heads.set("x-trpc-source", "rsc");
-        return Object.fromEntries(heads);
-      },
-      transformer: superjson,
+        async headers() {
+          const heads = new Map();
+          heads.set("cookie", (await cookies()).toString());
+          heads.set("x-trpc-source", "rsc");
+          return Object.fromEntries(heads);
+        },
+        transformer: superjson,
+      }),
+      false: httpBatchLink({
+        url: `${env.NEXT_PUBLIC_API_BASE_URL}/trpc`,
+        fetch(url, options) {
+          return fetch(url, {
+            ...options,
+            credentials: "omit",
+          });
+        },
+
+        async headers() {
+          const heads = new Map();
+          heads.set("cookie", (await cookies()).toString());
+          heads.set("x-trpc-source", "rsc");
+          return Object.fromEntries(heads);
+        },
+        transformer: superjson,
+      }),
     }),
   ],
 });

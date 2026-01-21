@@ -72,6 +72,39 @@ export const GetAppConfiguration = async () => {
       url: config.REDIS_URL,
       ttl: 60, // 1 minute cache
     },
+    ai: {
+      openAiKey: config.LLM_OPEN_AI_KEY,
+      openAiBaseUrl: config.LLM_OPEN_AI_BASE_URL,
+      openAiTextModel: config.LLM_OPEN_AI_TEXT_MODEL || 'gpt-4o-mini',
+      openAiImageModel: config.LLM_OPEN_AI_IMAGE_MODEL || 'gpt-image-1',
+      openAiAudioModel: config.LLM_OPEN_AI_AUDIO_MODEL || 'gpt-4o-mini-tts',
+      openAiAudioVoice: config.LLM_OPEN_AI_AUDIO_VOICE || 'alloy',
+      openAiImageTimeoutMs: config.LLM_OPEN_AI_IMAGE_TIMEOUT_MS
+        ? Number.parseInt(config.LLM_OPEN_AI_IMAGE_TIMEOUT_MS, 10)
+        : undefined,
+      openAiTimeoutMs: config.LLM_OPEN_AI_TIMEOUT_MS
+        ? Number.parseInt(config.LLM_OPEN_AI_TIMEOUT_MS, 10)
+        : 20000,
+      nanoBananaApiKey: config.NANO_BANANAS_API_KEY,
+      nanoBananaEndpoint: config.NANO_BANANAS_ENDPOINT,
+      nanoBananaModel: config.NANO_BANANAS_MODEL || 'nano-banana',
+      nanoBananaImageSize: config.NANO_BANANAS_IMAGE_SIZE,
+      nanoBananaTimeoutMs: config.NANO_BANANAS_TIMEOUT_MS
+        ? Number.parseInt(config.NANO_BANANAS_TIMEOUT_MS, 10)
+        : undefined,
+      replicateApiKey: config.REPLICATE_API_TOKEN,
+      replicateBaseUrl: config.REPLICATE_BASE_URL,
+      replicateTextModel: config.REPLICATE_TEXT_MODEL,
+      replicateImageModel: config.REPLICATE_IMAGE_MODEL,
+      replicateAudioModel: config.REPLICATE_AUDIO_MODEL,
+      replicateAudioVoice: config.REPLICATE_AUDIO_VOICE,
+      replicateTimeoutMs: config.REPLICATE_TIMEOUT_MS
+        ? Number.parseInt(config.REPLICATE_TIMEOUT_MS, 10)
+        : undefined,
+      replicatePollIntervalMs: config.REPLICATE_POLL_INTERVAL_MS
+        ? Number.parseInt(config.REPLICATE_POLL_INTERVAL_MS, 10)
+        : undefined,
+    },
     email: {
       apiKey: config.SENDGRID_API_KEY,
       fromEmail: config.SENDGRID_FROM_EMAIL,

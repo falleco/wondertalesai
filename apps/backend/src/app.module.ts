@@ -8,6 +8,7 @@ import { GetAppConfiguration } from './config/configuration';
 import { TypeOrmConfigFactory } from './config/orm.configuration';
 import { HealthModule } from './health/health.module';
 import { RedisModule } from './redis/redis.module';
+import { StoryModule } from './story/story.module';
 import { TrpcModule } from './trpc/trpc.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { TrpcModule } from './trpc/trpc.module';
     RedisModule,
     HealthModule,
     TrpcModule,
+    StoryModule,
   ],
   controllers: [],
   providers: [],

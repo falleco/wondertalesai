@@ -10,24 +10,24 @@ export default function HeroSection() {
         <div className="wrapper">
           <div className="max-w-[800px] mx-auto">
             <div className="text-center pb-16">
-              <Subheading text="Most Powerful AI Tools at One Place" />
+              <Subheading text="Contos de fadas interativos com IA" />
 
               <h1 className="text-gray-700 mx-auto font-bold mb-4 text-4xl sm:text-[50px] dark:text-white/90 sm:leading-[64px] max-w-[700px]">
-                Transform Ideas into Reality with Intelligent AI Tools
+                Crie livros infantis que mudam com cada escolha
               </h1>
               <p className="max-w-[537px] text-center mx-auto dark:text-gray-400 text-gray-500 text-base">
-                Unleash the Power of Artificial Intelligence to Streamline Your
-                Workflow, Boost Productivity, and Redefine Success.
+                Histórias doces, ilustrações encantadas e narracao suave para
+                transformar a hora do conto em uma aventura unica.
               </p>
               <div className="mt-9 flex sm:flex-row flex-col gap-3 relative z-30 items-center justify-center">
                 <Link
-                  href="/text-generator"
+                  href="/storybook"
                   className="bg-primary-500 transition h-12 inline-flex items-center justify-center hover:bg-primary-600 px-6 py-3 rounded-full text-white text-sm"
                 >
-                  Start writing for free
+                  Contar nova historia
                 </Link>
                 <Link
-                  href="https://www.youtube.com/watch?v=_iHmNaQBtKk"
+                  href="/dashboard"
                   className="rounded-full video-popup flex h-12 gap-3 items-center text-sm border bg-white dark:bg-white/10 dark:border-white/[0.05] dark:text-white border-gray-100 p-1.5 pr-6"
                 >
                   <span className="size-9 rounded-full gradient-bg-two inline-flex items-center justify-center text-sm font-medium">
@@ -46,7 +46,7 @@ export default function HeroSection() {
                       />
                     </svg>
                   </span>
-                  Watch Intro Video
+                  Ver biblioteca
                 </Link>
               </div>
             </div>

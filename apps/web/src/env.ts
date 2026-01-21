@@ -18,6 +18,7 @@ export const env = createEnv({
     NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID: z.string().min(1).optional(),
     NEXT_PUBLIC_PRO_YEARLY_PRICE_ID: z.string().min(1).optional(),
     NEXT_PUBLIC_API_BASE_URL: z.string().min(1),
+    NEXT_PUBLIC_TRPC_STREAM_URL: z.string().min(1).optional(),
   },
   experimental__runtimeEnv: {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -31,5 +32,6 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_PRO_MONTHLY_PRICE_ID,
     NEXT_PUBLIC_PRO_YEARLY_PRICE_ID:
       process.env.NEXT_PUBLIC_PRO_YEARLY_PRICE_ID,
+    NEXT_PUBLIC_TRPC_STREAM_URL: process.env.NEXT_PUBLIC_TRPC_STREAM_URL,
   },
 });

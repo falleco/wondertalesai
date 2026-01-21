@@ -2,7 +2,7 @@
 
 import type { AppRouter } from "@server/trpc/trpc.router";
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink } from "@trpc/client";
+import { httpBatchLink, httpBatchStreamLink, splitLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import { env } from "@web/env";
 import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
@@ -32,26 +32,51 @@ export function TRPCReactProvider(props: {
   cookies: ReadonlyRequestCookies;
 }) {
   const queryClient = getQueryClient();
+  const streamBaseUrl =
+    env.NEXT_PUBLIC_TRPC_STREAM_URL ?? env.NEXT_PUBLIC_API_BASE_URL;
 
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
-        httpBatchLink({
-          url: `${env.NEXT_PUBLIC_API_BASE_URL}/trpc`,
-
-          fetch(url, options) {
-            return fetch(url, {
-              ...options,
-              credentials: "include",
-            });
+        splitLink({
+          condition(op) {
+            return op.path === "story.streamPage";
           },
+          true: httpBatchStreamLink({
+            url: `${streamBaseUrl}/trpc`,
 
-          async headers() {
-            const heads = new Map(props.headers);
-            heads.set("x-trpc-source", "react");
-            return Object.fromEntries(heads);
-          },
-          transformer: superjson,
+            fetch(url, options) {
+              return fetch(url, {
+                ...options,
+                cache: "no-store",
+                credentials: "include",
+              });
+            },
+
+            async headers() {
+              const heads = new Map(props.headers);
+              heads.set("x-trpc-source", "react");
+              return Object.fromEntries(heads);
+            },
+            transformer: superjson,
+          }),
+          false: httpBatchLink({
+            url: `${env.NEXT_PUBLIC_API_BASE_URL}/trpc`,
+
+            fetch(url, options) {
+              return fetch(url, {
+                ...options,
+                credentials: "include",
+              });
+            },
+
+            async headers() {
+              const heads = new Map(props.headers);
+              heads.set("x-trpc-source", "react");
+              return Object.fromEntries(heads);
+            },
+            transformer: superjson,
+          }),
         }),
       ],
     }),

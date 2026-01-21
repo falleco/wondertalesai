@@ -42,6 +42,14 @@ const nextConfig: NextConfig = {
         source: "/trpc",
         destination: "http://localhost:4001/trpc", // Proxy to Backend
       },
+      {
+        source: "/story/:path*",
+        destination: "http://localhost:4001/story/:path*", // Proxy to Backend
+      },
+      {
+        source: "/story",
+        destination: "http://localhost:4001/story", // Proxy to Backend
+      },
       // {
       //   source: "/api/:path*",
       //   destination: "http://localhost:4001/api/:path*", // Proxy to Backend
