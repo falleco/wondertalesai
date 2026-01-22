@@ -14,7 +14,7 @@
     "@better-auth/stripe": "^1.4.17",
     "@dreamtalesai/auth": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
-    "@stripe/stripe-js": "^8.6.3",
+    "@stripe/stripe-js": "^8.6.4",
     "@svgr/webpack": "^8.1.0",
     "@t3-oss/env-nextjs": "^0.13.10",
     "@tailwindcss/typography": "^0.5.19",
