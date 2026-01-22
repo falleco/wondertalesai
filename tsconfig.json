@@ -13,6 +13,8 @@
     "strictPropertyInitialization": false,
     "resolveJsonModule": true,
     "paths": {
+      "@dreamtalesai/auth": ["./packages/auth/src/index.ts"],
+      "@dreamtalesai/auth/*": ["./packages/auth/src/*"],
       "@server/*": ["./apps/backend/src/*"],
       "@web/*": ["./apps/web/src/*"]
     }

@@ -26,16 +26,7 @@ export default function SignInForm() {
   async function onSubmit(formData: Inputs) {
     setIsLoading(true);
 
-    const magicLink = (
-      authClient.signIn as {
-        magicLink: (input: { email: string }) => Promise<{
-          data: unknown;
-          error: { message: string } | null;
-        }>;
-      }
-    ).magicLink;
-
-    const { data, error } = await magicLink({
+    const { data, error } = await authClient.signIn.magicLink({
       email: formData.email,
       // name: "my-name",
       // callbackURL: "/dashboard",

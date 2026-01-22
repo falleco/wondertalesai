@@ -51,15 +51,15 @@
     "test:ci": "vitest --watch false --passWithNoTests --coverage"
   },
   "dependencies": {
-    "@better-auth/passkey": "^1.4.6",
-    "@better-auth/stripe": "^1.4.5",
-    "@stripe/stripe-js": "^8.5.3",
-    "@trpc/client": "^11.8.0",
-    "better-auth": "^1.4.5",
-    "stripe": "^20.0.0"
+    "@better-auth/passkey": "^1.4.17",
+    "@better-auth/stripe": "^1.4.17",
+    "@stripe/stripe-js": "^8.6.3",
+    "@trpc/client": "^11.8.1",
+    "better-auth": "^1.4.17",
+    "stripe": "^20.2.0"
   },
   "devDependencies": {
-    "tsup": "^8.5.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "packageManager": "yarn@4.9.2",

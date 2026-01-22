@@ -7,7 +7,7 @@ import { betterAuth } from 'better-auth';
 import Stripe from 'stripe';
 
 const stripeClient = new Stripe('a', {
-  apiVersion: '2025-11-17.clover', // Latest API version as of Stripe SDK v20.0.0
+  apiVersion: '2025-12-15.clover', // Latest API version as of Stripe SDK v20.2.0
 });
 
 @Injectable()
