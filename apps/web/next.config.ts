@@ -4,6 +4,8 @@ const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
   ? process.env.NEXT_PUBLIC_POSTHOG_HOST.replace(/\/$/, "")
   : "https://app.posthog.com";
 const hasPosthog = Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY);
+const backendInternalUrl =
+  process.env.BACKEND_INTERNAL_URL ?? "http://localhost:4001";
 
 const nextConfig: NextConfig = {
   webpack(config) {
@@ -36,19 +38,19 @@ const nextConfig: NextConfig = {
     const rewrites = [
       {
         source: "/trpc/:path*",
-        destination: "http://localhost:4001/trpc/:path*", // Proxy to Backend
+        destination: `${backendInternalUrl}/trpc/:path*`, // Proxy to Backend
       },
       {
         source: "/trpc",
-        destination: "http://localhost:4001/trpc", // Proxy to Backend
+        destination: `${backendInternalUrl}/trpc`, // Proxy to Backend
       },
       {
         source: "/story/:path*",
-        destination: "http://localhost:4001/story/:path*", // Proxy to Backend
+        destination: `${backendInternalUrl}/story/:path*`, // Proxy to Backend
       },
       {
         source: "/story",
-        destination: "http://localhost:4001/story", // Proxy to Backend
+        destination: `${backendInternalUrl}/story`, // Proxy to Backend
       },
       // {
       //   source: "/api/:path*",

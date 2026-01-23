@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: sophon
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    environment:
+      APP_BASE_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: "f9150624-f48d-4b25-8cbe-5dd8609c2b2a"
+      BIND_ADDR: 0.0.0.0
+      CORS_URL: http://localhost:3000
+      DATABASE_URL: postgres://postgres:password123@postgres:5432/sophon
+      DATABASE_USE_REPLICAS: "false"
+      PORT: "4001"
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "4001:4001"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        DATABASE_URL: postgres://postgres:password123@postgres:5432/sophon
+        REDIS_URL: redis://redis:6379
+        STRIPE_SECRET_KEY: sk_test_dummy
+        STRIPE_WEBHOOK_SECRET: whsec_dummy
+        GITHUB_CLIENT_ID: github-client-id
+        GITHUB_CLIENT_SECRET: github-client-secret
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:3000
+    environment:
+      BACKEND_INTERNAL_URL: http://backend:4001
+      DATABASE_URL: postgres://postgres:password123@postgres:5432/sophon
+      REDIS_URL: redis://redis:6379
+      STRIPE_SECRET_KEY: sk_test_dummy
+      STRIPE_WEBHOOK_SECRET: whsec_dummy
+      GITHUB_CLIENT_ID: github-client-id
+      GITHUB_CLIENT_SECRET: github-client-secret
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3000
+      PORT: "3000"
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres-data:
