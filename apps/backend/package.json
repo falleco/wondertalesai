@@ -78,7 +78,7 @@
     "reflect-metadata": "^0.2.2",
     "replicate": "^1.4.0",
     "rxjs": "^7.8.2",
-    "stripe": "^20.2.0",
+    "stripe": "^20.3.0",
     "superjson": "^2.2.6",
     "trpc-swagger": "^2.0.0",
     "typeorm": "^0.3.28",
