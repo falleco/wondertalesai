@@ -2386,7 +2386,7 @@ __metadata:
     "@stripe/stripe-js": "npm:^8.6.3"
     "@trpc/client": "npm:^11.8.1"
     better-auth: "npm:^1.4.17"
-    stripe: "npm:^20.2.0"
+    stripe: "npm:^20.3.0"
     tsup: "npm:^8.5.1"
     typescript: "npm:^5.9.3"
   languageName: unknown
@@ -2460,7 +2460,7 @@ __metadata:
     replicate: "npm:^1.4.0"
     rxjs: "npm:^7.8.2"
     source-map-support: "npm:^0.5.21"
-    stripe: "npm:^20.2.0"
+    stripe: "npm:^20.3.0"
     superjson: "npm:^2.2.6"
     supertest: "npm:^7.2.2"
     trpc-swagger: "npm:^2.0.0"
@@ -2524,7 +2524,7 @@ __metadata:
     server-only: "npm:^0.0.1"
     simplebar-react: "npm:^3.3.2"
     sonner: "npm:^2.0.7"
-    stripe: "npm:^20.2.0"
+    stripe: "npm:^20.3.0"
     tailwind-merge: "npm:^3.4.0"
     tailwindcss: "npm:^4"
     typescript: "npm:^5"
@@ -15311,17 +15311,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"stripe@npm:^20.2.0":
-  version: 20.2.0
-  resolution: "stripe@npm:20.2.0"
-  dependencies:
-    qs: "npm:^6.14.1"
+"stripe@npm:^20.3.0":
+  version: 20.3.0
+  resolution: "stripe@npm:20.3.0"
   peerDependencies:
     "@types/node": ">=16"
   peerDependenciesMeta:
     "@types/node":
       optional: true
-  checksum: 10c0/f91726e64fe91dfc9c40b0b305bc8d47d1d2765104e1844ee97364d742126fe95f375b7f5b1dbd17e7c3d288ae124c25dcc441c5cebdc23efc1d9b5bc7623fa6
+  checksum: 10c0/f895b9674ed5e192868b569873392aa8e6a3f03cf7e3a4de2a126da6b28e9dd4432ca7d8fe9782dc2b9cccbcfc8ccefc998565a1ccf8ed263873aa018d864657
   languageName: node
   linkType: hard
 
