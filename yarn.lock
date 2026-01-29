@@ -2383,7 +2383,7 @@ __metadata:
   dependencies:
     "@better-auth/passkey": "npm:^1.4.17"
     "@better-auth/stripe": "npm:^1.4.17"
-    "@stripe/stripe-js": "npm:^8.6.3"
+    "@stripe/stripe-js": "npm:^8.7.0"
     "@trpc/client": "npm:^11.8.1"
     better-auth: "npm:^1.4.17"
     stripe: "npm:^20.2.0"
@@ -2492,7 +2492,7 @@ __metadata:
     "@biomejs/biome": "npm:2.3.11"
     "@dreamtalesai/auth": "workspace:*"
     "@hookform/resolvers": "npm:^5.2.2"
-    "@stripe/stripe-js": "npm:^8.6.3"
+    "@stripe/stripe-js": "npm:^8.7.0"
     "@svgr/webpack": "npm:^8.1.0"
     "@t3-oss/env-nextjs": "npm:^0.13.10"
     "@tailwindcss/postcss": "npm:^4.1.18"
@@ -6343,10 +6343,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stripe/stripe-js@npm:^8.6.3":
-  version: 8.6.3
-  resolution: "@stripe/stripe-js@npm:8.6.3"
-  checksum: 10c0/1054528cc21439d5f3d98a1f43f50bc520fe0310c7bd77280589202ede1d6fb66e5d8b4d6e4827bca3e4e9e97c44e37886db886d43d31f5ef6b6e671c0389216
+"@stripe/stripe-js@npm:^8.7.0":
+  version: 8.7.0
+  resolution: "@stripe/stripe-js@npm:8.7.0"
+  checksum: 10c0/47f7071a7549f94f3bfcc0cf3d7fe4992abdb2d3eb0a1fb712552da1bd0f2b1cb2c1e34ec9c5921d86a8d9e01bb7fff915faa5fa31130ffc40d8872ada94e92d
   languageName: node
   linkType: hard
 

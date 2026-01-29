@@ -53,7 +53,7 @@
   "dependencies": {
     "@better-auth/passkey": "^1.4.17",
     "@better-auth/stripe": "^1.4.17",
-    "@stripe/stripe-js": "^8.6.3",
+    "@stripe/stripe-js": "^8.7.0",
     "@trpc/client": "^11.8.1",
     "better-auth": "^1.4.17",
     "stripe": "^20.2.0"
