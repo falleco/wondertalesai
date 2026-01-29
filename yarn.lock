@@ -12,16 +12,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ai-sdk/gateway@npm:3.0.22":
-  version: 3.0.22
-  resolution: "@ai-sdk/gateway@npm:3.0.22"
+"@ai-sdk/gateway@npm:3.0.27":
+  version: 3.0.27
+  resolution: "@ai-sdk/gateway@npm:3.0.27"
   dependencies:
     "@ai-sdk/provider": "npm:3.0.5"
-    "@ai-sdk/provider-utils": "npm:4.0.9"
+    "@ai-sdk/provider-utils": "npm:4.0.10"
     "@vercel/oidc": "npm:3.1.0"
   peerDependencies:
     zod: ^3.25.76 || ^4.1.8
-  checksum: 10c0/94551537fe8cc4e3b2330d7876221b233c7daf3a56317775d13b0ef804aa26517ef1fc7e97d7cbf50d87283f3cace45f92b578b25d5e531f243b491a0e9a8df8
+  checksum: 10c0/155118d56536fcf3152bd6000c58d031947558a25666489ef9cde9fb6c58224e173c333875b851bafeb441ee12734d40018fe409d6e04f817f3a511637db67b2
   languageName: node
   linkType: hard
 
@@ -34,6 +34,19 @@ __metadata:
   peerDependencies:
     zod: ^3.25.76 || ^4.1.8
   checksum: 10c0/aff0e84cb2299496b66e93e26375b8d4f17d6083438b9f52b079c563ea0f3fba239df7446d24007f72c501b691f0f20822f987d1f989e872a7b6ea3e81ef8160
+  languageName: node
+  linkType: hard
+
+"@ai-sdk/provider-utils@npm:4.0.10":
+  version: 4.0.10
+  resolution: "@ai-sdk/provider-utils@npm:4.0.10"
+  dependencies:
+    "@ai-sdk/provider": "npm:3.0.5"
+    "@standard-schema/spec": "npm:^1.1.0"
+    eventsource-parser: "npm:^3.0.6"
+  peerDependencies:
+    zod: ^3.25.76 || ^4.1.8
+  checksum: 10c0/2520edf70eeee06eedbcace9caf0e48102552a8b1808e05249ed5f4ce4c0ae8bd6617d073f259c68134acdf4f73aee969dc4814bc2836ced9fa1a50bc3553196
   languageName: node
   linkType: hard
 
@@ -2436,7 +2449,7 @@ __metadata:
     "@types/node": "npm:^25.0.10"
     "@types/passport-local": "npm:^1.0.38"
     "@types/supertest": "npm:^6.0.3"
-    ai: "npm:^6.0.48"
+    ai: "npm:^6.0.59"
     amqp-connection-manager: "npm:^5.0.0"
     amqplib: "npm:^0.10.9"
     better-auth: "npm:^1.4.17"
@@ -2506,7 +2519,7 @@ __metadata:
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
     "@xyflow/react": "npm:^12.10.0"
-    ai: "npm:^6.0.48"
+    ai: "npm:^6.0.59"
     better-auth: "npm:^1.4.17"
     client-only: "npm:^0.0.1"
     clsx: "npm:^2.1.1"
@@ -8094,17 +8107,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ai@npm:^6.0.48":
-  version: 6.0.48
-  resolution: "ai@npm:6.0.48"
+"ai@npm:^6.0.59":
+  version: 6.0.59
+  resolution: "ai@npm:6.0.59"
   dependencies:
-    "@ai-sdk/gateway": "npm:3.0.22"
+    "@ai-sdk/gateway": "npm:3.0.27"
     "@ai-sdk/provider": "npm:3.0.5"
-    "@ai-sdk/provider-utils": "npm:4.0.9"
+    "@ai-sdk/provider-utils": "npm:4.0.10"
     "@opentelemetry/api": "npm:1.9.0"
   peerDependencies:
     zod: ^3.25.76 || ^4.1.8
-  checksum: 10c0/2f95d5baf5d292e967a68f368617bd545f9b40e0747bb092b4515d3abc860ca852bfa61eea6d89c053efdbdaaf2a21c51473960871e14034aae4c1b574779442
+  checksum: 10c0/d43a52df34f67305b17561436622d3e11f22eba5f058ca66d70301c5b7d98aaf40e37167783dd865639ee0d5441f9e880c5cda8189391e31a24343b4307e515f
   languageName: node
   linkType: hard
 
