@@ -2470,7 +2470,7 @@ __metadata:
     tsconfig-paths: "npm:^4.2.0"
     typeorm: "npm:^0.3.28"
     typescript: "npm:^5.9.3"
-    viem: "npm:^2.44.4"
+    viem: "npm:^2.45.0"
     zod: "npm:^4.3.6"
   languageName: unknown
   linkType: soft
@@ -16393,9 +16393,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:^2.44.4":
-  version: 2.44.4
-  resolution: "viem@npm:2.44.4"
+"viem@npm:^2.45.0":
+  version: 2.45.0
+  resolution: "viem@npm:2.45.0"
   dependencies:
     "@noble/curves": "npm:1.9.1"
     "@noble/hashes": "npm:1.8.0"
@@ -16410,7 +16410,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/046eec6871f7ffba466bd579f5836710477078ec53390ace96a6c815f37c336b6cca6c605725aaba3fb919eb186199ebab9840aef08facfe8a8bf5e636506f73
+  checksum: 10c0/099c73d2980493a372d7c91d7593c62c9bb534a91293f6ae308a88292e16a4c89301db8899fec98597a9e6ee51f02bd9ed857f498946b2ee905c9cae00e5289d
   languageName: node
   linkType: hard
 
