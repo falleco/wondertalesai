@@ -57,7 +57,7 @@
     "@sentry/node": "^10.36.0",
     "@thallesp/nestjs-better-auth": "^2.2.2",
     "@trpc/server": "^11.8.1",
-    "ai": "^6.0.48",
+    "ai": "^6.0.59",
     "amqp-connection-manager": "^5.0.0",
     "amqplib": "^0.10.9",
     "better-auth": "^1.4.17",
