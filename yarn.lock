@@ -25,15 +25,28 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ai-sdk/openai@npm:^3.0.18":
-  version: 3.0.18
-  resolution: "@ai-sdk/openai@npm:3.0.18"
+"@ai-sdk/openai@npm:^3.0.21":
+  version: 3.0.21
+  resolution: "@ai-sdk/openai@npm:3.0.21"
   dependencies:
     "@ai-sdk/provider": "npm:3.0.5"
-    "@ai-sdk/provider-utils": "npm:4.0.9"
+    "@ai-sdk/provider-utils": "npm:4.0.10"
   peerDependencies:
     zod: ^3.25.76 || ^4.1.8
-  checksum: 10c0/aff0e84cb2299496b66e93e26375b8d4f17d6083438b9f52b079c563ea0f3fba239df7446d24007f72c501b691f0f20822f987d1f989e872a7b6ea3e81ef8160
+  checksum: 10c0/1ee20cfce661c85ff1703b531f21e6ca6e14eebd0eacacbf969ca33be8a23712c26bfc2cee49def1ddd6c47f090330a9d1bf8fa3449fad9a2a8d081010011213
+  languageName: node
+  linkType: hard
+
+"@ai-sdk/provider-utils@npm:4.0.10":
+  version: 4.0.10
+  resolution: "@ai-sdk/provider-utils@npm:4.0.10"
+  dependencies:
+    "@ai-sdk/provider": "npm:3.0.5"
+    "@standard-schema/spec": "npm:^1.1.0"
+    eventsource-parser: "npm:^3.0.6"
+  peerDependencies:
+    zod: ^3.25.76 || ^4.1.8
+  checksum: 10c0/2520edf70eeee06eedbcace9caf0e48102552a8b1808e05249ed5f4ce4c0ae8bd6617d073f259c68134acdf4f73aee969dc4814bc2836ced9fa1a50bc3553196
   languageName: node
   linkType: hard
 
@@ -2396,7 +2409,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@dreamtalesai/backend@workspace:apps/backend"
   dependencies:
-    "@ai-sdk/openai": "npm:^3.0.18"
+    "@ai-sdk/openai": "npm:^3.0.21"
     "@aws-sdk/client-secrets-manager": "npm:^3.974.0"
     "@better-auth/passkey": "npm:^1.4.17"
     "@better-auth/stripe": "npm:^1.4.17"

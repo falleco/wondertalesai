@@ -30,7 +30,7 @@
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d ormconfig.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.18",
+    "@ai-sdk/openai": "^3.0.21",
     "@aws-sdk/client-secrets-manager": "^3.974.0",
     "@better-auth/passkey": "^1.4.17",
     "@better-auth/stripe": "^1.4.17",
