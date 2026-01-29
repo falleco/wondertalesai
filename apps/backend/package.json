@@ -82,7 +82,7 @@
     "superjson": "^2.2.6",
     "trpc-swagger": "^2.0.0",
     "typeorm": "^0.3.28",
-    "viem": "^2.44.4",
+    "viem": "^2.45.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
